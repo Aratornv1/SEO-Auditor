@@ -1,0 +1,126 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Aratornv1\SeoChecker\Analyzer;
+use Aratornv1\SeoChecker\ConsoleReporter;
+use Aratornv1\SeoChecker\Exception\FetchException;
+use Aratornv1\SeoChecker\PageFetcher;
+use Aratornv1\SeoChecker\Rules\TitleRule;
+use Aratornv1\SeoChecker\Status;
+
+// Locate the Composer autoloader: either this package is the root project,
+// or it is installed as a dependency inside another project's vendor/.
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+foreach ($autoloadCandidates as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+
+if (!class_exists(Analyzer::class)) {
+    fwrite(STDERR, "Composer autoloader not found. Run `composer install` first." . PHP_EOL);
+    exit(2);
+}
+
+const EXIT_OK = 0;
+const EXIT_ISSUES = 1;
+const EXIT_USAGE = 2;
+
+function printUsage(): void
+{
+    echo <<<TXT
+    Usage: seo-check [options] <url>
+
+    Options:
+      --no-emoji   Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
+      --no-color   Disable ANSI colors
+      -h, --help   Show this help
+
+    Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage/network error
+
+    TXT;
+}
+
+// --- Parse arguments ---------------------------------------------------------
+$args = array_slice($argv, 1);
+$useEmoji = true;
+$useColor = true;
+$url = null;
+
+foreach ($args as $arg) {
+    switch ($arg) {
+        case '-h':
+        case '--help':
+            printUsage();
+            exit(EXIT_OK);
+        case '--no-emoji':
+            $useEmoji = false;
+            break;
+        case '--no-color':
+            $useColor = false;
+            break;
+        default:
+            if (str_starts_with($arg, '-')) {
+                fwrite(STDERR, "Unknown option: {$arg}" . PHP_EOL);
+                printUsage();
+                exit(EXIT_USAGE);
+            }
+            $url = $arg;
+    }
+}
+
+if ($url === null) {
+    printUsage();
+    exit(EXIT_USAGE);
+}
+
+// Allow "example.com" without a scheme.
+if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
+    $url = 'https://' . $url;
+}
+
+// --- Terminal setup ----------------------------------------------------------
+$isTty = function_exists('stream_isatty') && stream_isatty(STDOUT);
+
+if (PHP_OS_FAMILY === 'Windows' && $isTty) {
+    // Switch the console to UTF-8 and enable ANSI escape sequences.
+    if (function_exists('sapi_windows_cp_set')) {
+        sapi_windows_cp_set(65001);
+    }
+    if (function_exists('sapi_windows_vt100_support')) {
+        sapi_windows_vt100_support(STDOUT, true);
+    }
+}
+
+// Colors only make sense on a real terminal and when NO_COLOR is not set.
+$useColor = $useColor && $isTty && getenv('NO_COLOR') === false;
+
+// --- Compose and run the analyzer -------------------------------------------
+// Rules are registered explicitly here: this is the single place to change
+// when a rule is added or removed; the engine itself stays untouched.
+$analyzer = new Analyzer(new PageFetcher());
+$analyzer->addRule(new TitleRule());
+
+try {
+    $results = $analyzer->analyze($url);
+} catch (FetchException $e) {
+    fwrite(STDERR, $e->getMessage() . PHP_EOL);
+    exit(EXIT_USAGE);
+}
+
+echo (new ConsoleReporter($useEmoji, $useColor))->render($url, $results);
+
+foreach ($results as $result) {
+    if ($result->status === Status::Error) {
+        exit(EXIT_ISSUES);
+    }
+}
+
+exit(EXIT_OK);

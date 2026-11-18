@@ -1,0 +1,33 @@
+{
+    "name": "aratornv1/seo-checker",
+    "description": "Розширюваний консольний SEO-аудитор веб-сторінок на чистому PHP (Strategy-патерн).",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["seo", "audit", "cli", "strategy-pattern"],
+    "require": {
+        "php": ">=8.1",
+        "ext-dom": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aratornv1\\SeoChecker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Aratornv1\\SeoChecker\\Tests\\": "tests/"
+        }
+    },
+    "bin": ["bin/seo-check"],
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}
