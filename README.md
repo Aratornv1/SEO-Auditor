@@ -1,17 +1,17 @@
 # SEO Auditor (`seo-checker`)
 
-Консольний SEO-аудитор веб-сторінок на чистому PHP. Пакет завантажує HTML за URL, прогоняє його через 10 незалежних правил і виводить зрозумілий звіт у терміналі.
+A console SEO auditor for web pages, written in plain PHP. The package downloads a page's HTML by URL, runs it through 10 independent rules, and prints a clear report in the terminal.
 
-Архітектура розширювана за патерном **Strategy**: кожна перевірка — окремий клас, що реалізує `RuleInterface`. Щоб додати нову перевірку, ядро змінювати не потрібно.
+The architecture is extensible through the **Strategy** pattern: every check is a separate class implementing `RuleInterface`. Adding a new check doesn't require changing the core.
 
-## Вимоги
+## Requirements
 
 - PHP 8.1+
-- розширення `dom`, `mbstring`
-- розширення `curl` (рекомендовано; без нього використовуються PHP streams)
+- `dom` and `mbstring` extensions
+- `curl` extension (recommended; PHP streams are used without it)
 - Composer 2
 
-## Встановлення
+## Installation
 
 ```bash
 git clone https://github.com/Aratornv1/SEO-Auditor.git
@@ -19,9 +19,9 @@ cd SEO-Auditor
 composer install
 ```
 
-### Підключення як локального пакета в іншому проєкті
+### Using it as a local package in another project
 
-У `composer.json` цільового проєкту додайте репозиторій типу `path`:
+Add a `path` repository to the target project's `composer.json`:
 
 ```json
 {
@@ -34,26 +34,26 @@ composer install
 }
 ```
 
-Потім виконайте `composer update aratornv1/seo-checker`. Composer створить символічне посилання на пакет, а команда буде доступна як `vendor/bin/seo-check`.
+Then run `composer update aratornv1/seo-checker`. Composer creates a symlink to the package, and the command becomes available as `vendor/bin/seo-check`.
 
-## Використання
+## Usage
 
 ```bash
 php bin/seo-check https://example.com
 ```
 
-На Linux/macOS файл має права на виконання, тож можна запускати і так: `./bin/seo-check https://example.com`. Схему можна не вказувати: `seo-check example.com` автоматично стане `https://example.com`. За раз перевіряється одна адреса: другий URL дає помилку. Щоб передати адресу, що починається з `-`, поставте перед нею `--`.
+On Linux/macOS the file is executable, so you can also run it as `./bin/seo-check https://example.com`. The scheme is optional: `seo-check example.com` automatically becomes `https://example.com`. One address is checked per run: a second URL causes an error. To pass an address that starts with `-`, put `--` before it.
 
-| Опція | Призначення |
-|-------|-------------|
-| `--max-size=N` | Відхиляти сторінки більші за N мегабайт (за замовчуванням `2`, максимум `100`, допускаються дробові значення, наприклад `0.5`). Підходить і запис `--max-size 3` |
-| `--no-emoji` | Текстові маркери `[ OK ] [WARN] [FAIL]` замість іконок |
-| `--no-color` | Вимкнути ANSI-кольори (вони й так вимикаються, якщо вивід не в терміналі або задано `NO_COLOR`) |
-| `-h`, `--help` | Довідка |
+| Option | Purpose |
+|--------|---------|
+| `--max-size=N` | Reject pages larger than N megabytes (default `2`, maximum `100`, fractional values such as `0.5` are allowed). The `--max-size 3` form also works |
+| `--no-emoji` | Use text markers `[ OK ] [WARN] [FAIL]` instead of icons |
+| `--no-color` | Disable ANSI colors (they are disabled anyway when the output is not a terminal or `NO_COLOR` is set) |
+| `-h`, `--help` | Show help |
 
-Код виходу: `0` — помилок немає (попередження допускаються), `1` — є хоча б одна `error`, `2` — неправильне використання або сторінку не вдалося завантажити. Це зручно для CI.
+Exit codes: `0` — no errors (warnings are allowed), `1` — at least one `error`, `2` — incorrect usage or the page could not be downloaded. This is convenient for CI.
 
-Приклад звіту для сторінки з проблемами:
+Example report for a page with problems (the report messages are currently in Ukrainian):
 
 ```
 SEO-аудит: http://127.0.0.1:8099/bad.html
@@ -72,33 +72,33 @@ SEO-аудит: http://127.0.0.1:8099/bad.html
 Підсумок: 0 ✅ · 7 ⚠️ · 3 ❌
 ```
 
-Статуси: ✅ `success` — усе гаразд, ⚠️ `warning` — варто покращити, ❌ `error` — серйозна проблема.
+Statuses: ✅ `success` — all good, ⚠️ `warning` — worth improving, ❌ `error` — a serious problem.
 
-## Архітектура
+## Architecture
 
 ```
 src/
-├── RuleInterface.php          контракт правила (Strategy)
-├── Analyzer.php               ядро: addRule(), завантаження HTML, запуск правил
-├── HtmlProviderInterface.php  абстракція джерела HTML
-├── PageFetcher.php            реалізація: HTTP(S) через cURL (запасний варіант — streams)
+├── RuleInterface.php          rule contract (Strategy)
+├── Analyzer.php               core: addRule(), HTML loading, running the rules
+├── HtmlProviderInterface.php  abstraction of the HTML source
+├── PageFetcher.php            implementation: HTTP(S) via cURL (fallback: streams)
 ├── XPathFactory.php           HTML → DOMXPath
-├── ReporterInterface.php      абстракція виводу
-├── ConsoleReporter.php        звіт у терміналі
-├── DefaultRules.php           стандартний набір із 10 правил
+├── ReporterInterface.php      output abstraction
+├── ConsoleReporter.php        terminal report
+├── DefaultRules.php           default set of 10 rules
 ├── Result.php, Status.php, Outcome.php
 ├── Exception/FetchException.php
-├── Support/                   Text, MetaTagReader (спільні дрібні помічники)
-└── Rules/                     10 правил (по одному класу на перевірку)
+├── Support/                   Text, MetaTagReader (small shared helpers)
+└── Rules/                     10 rules (one class per check)
 ```
 
-- `RuleInterface::check(DOMXPath $xpath): array` повертає `['status' => 'success|warning|error', 'message' => '...']`.
-- `Analyzer::addRule(RuleInterface $rule)` реєструє правило. `Analyzer::analyze($url)` повертає результати в порядку реєстрації.
-- Ядро не знає жодного конкретного правила, тож нові правила додаються без змін у ньому (Open/Closed).
-- Збій одного правила (виняток чи некоректна відповідь) перетворюється на результат зі статусом `error`, а решта правил виконується далі.
-- `Analyzer` залежить від абстракцій (`HtmlProviderInterface`), тому в тестах мережа не потрібна (Dependency Inversion).
+- `RuleInterface::check(DOMXPath $xpath): array` returns `['status' => 'success|warning|error', 'message' => '...']`.
+- `Analyzer::addRule(RuleInterface $rule)` registers a rule. `Analyzer::analyze($url)` returns the results in registration order.
+- The core doesn't know any specific rule, so new rules are added without changing it (Open/Closed).
+- A failure in one rule (an exception or an invalid response) is turned into a result with the `error` status, and the remaining rules keep running.
+- `Analyzer` depends on abstractions (`HtmlProviderInterface`), so tests don't need a network (Dependency Inversion).
 
-### Використання як бібліотеки
+### Using it as a library
 
 ```php
 use Aratornv1\SeoChecker\Analyzer;
@@ -108,10 +108,10 @@ use Aratornv1\SeoChecker\Rules\TitleRule;
 
 $analyzer = new Analyzer(new PageFetcher());
 
-// Або лише потрібні правила, зі своїми порогами:
+// Either only the rules you need, with your own thresholds:
 $analyzer->addRule(new TitleRule(minLength: 20, maxLength: 70));
 
-// Або весь стандартний набір:
+// Or the whole default set:
 // foreach (DefaultRules::create() as $rule) { $analyzer->addRule($rule); }
 
 foreach ($analyzer->analyze('https://example.com') as $result) {
@@ -119,7 +119,7 @@ foreach ($analyzer->analyze('https://example.com') as $result) {
 }
 ```
 
-### Як додати власне правило
+### Adding your own rule
 
 ```php
 namespace App\Seo;
@@ -140,62 +140,62 @@ final class AuthorMetaRule implements RuleInterface
         $found = $xpath->query('//meta[@name="author"]')->length > 0;
 
         return $found
-            ? Outcome::success('Автора вказано')
-            : Outcome::warning('Мета-тег author відсутній');
+            ? Outcome::success('Author is specified')
+            : Outcome::warning('The author meta tag is missing');
     }
 }
 ```
 
-Далі зареєструйте його: `$analyzer->addRule(new AuthorMetaRule());`. `Outcome::success/warning/error` — зручні конструктори того самого масиву `['status' => …, 'message' => …]`, який можна повернути й вручну.
+Then register it: `$analyzer->addRule(new AuthorMetaRule());`. `Outcome::success/warning/error` are convenient constructors for the same `['status' => …, 'message' => …]` array, which you can also return by hand.
 
-## 10 SEO-метрик і чому вони важливі
+## The 10 SEO metrics and why they matter
 
-| # | Правило | Що перевіряє | Чому це важливо |
-|---|---------|--------------|-----------------|
-| 1 | `TitleRule` | `<title>` у `<head>`: є, один, довжина 30–60 символів | Один із найсильніших сигналів ранжування і заголовок сніпета у видачі. Задовгий заголовок обрізається, закороткий не розкриває тему. Відсутній або порожній — `error`. |
-| 2 | `MetaDescriptionRule` | `meta description`: є, один, довжина 70–160 символів | Не впливає на ранжування напряму, але формує текст сніпета і CTR зі сторінки видачі. |
-| 3 | `H1Rule` | Рівно один непорожній `<h1>` (зображення з `alt` усередині теж рахується текстом) | Позначає головну тему сторінки для пошуковика і скрінрідерів. Немає `h1` — `error`, кілька — `warning`. |
-| 4 | `HeadingHierarchyRule` | Заголовки без пропуску рівнів (`h2` → `h4`) | Логічна структура допомагає краулерам розуміти контент і покращує доступність. Повернення на вищий рівень (`h4` → `h2`) не вважається помилкою. |
-| 5 | `ImageAltRule` | Кожен `<img>` має атрибут `alt` | Текст `alt` індексується для пошуку за зображеннями і потрібен скрінрідерам. Порожній `alt=""` допустимий для декоративних зображень. Якщо без `alt` половина й більше зображень — `error`, інакше `warning`. |
-| 6 | `CanonicalRule` | `<link rel="canonical">` у `<head>`: є, один, абсолютний URL (у `<body>` пошуковики його ігнорують); збігається з `og:url`, якщо той заданий | Вказує основну версію сторінки і запобігає проблемам дубльованого контенту (параметри, UTM, www/без www). Якщо одну й ту саму сторінку названо різними адресами, головного посилання немає: кілька різних canonical або порожній `href` — `error` (у повідомленні перелічено адреси), `canonical` і `og:url` на різні адреси — `warning`. Регістр хоста, кінцевий `/`, `#фрагмент` і стандартний порт за різницю не вважаються. |
-| 7 | `RobotsMetaRule` | У `meta robots` / `googlebot` немає `noindex` (і `none`) | Випадково залишений `noindex` повністю прибирає сторінку з індексу, і це одна з найдорожчих SEO-помилок. `nofollow` дає `warning`. |
-| 8 | `ViewportRule` | `<meta name="viewport">` з `width=device-width` | Google індексує сайти за принципом mobile-first, а без viewport сторінка вважається не адаптованою для мобільних. Заборона масштабування (`user-scalable=no`) — `warning` через доступність. |
-| 9 | `OpenGraphRule` | Є `og:title`, `og:description`, `og:image` (абсолютна адреса) | Керує виглядом посилання в соцмережах і месенджерах, що збільшує кількість переходів і поширень. |
-| 10 | `HtmlLangRule` | Атрибут `lang` у `<html>` з коректним значенням | Допомагає визначити мову й регіон контенту, а ще потрібен скрінрідерам і браузерним перекладачам. |
+| # | Rule | What it checks | Why it matters |
+|---|------|----------------|----------------|
+| 1 | `TitleRule` | `<title>` in `<head>`: present, single, 30–60 characters long | One of the strongest ranking signals and the snippet headline in search results. An overly long title gets truncated, and one that is too short doesn't convey the topic. Missing or empty — `error`. |
+| 2 | `MetaDescriptionRule` | `meta description`: present, single, 70–160 characters long | Doesn't affect ranking directly, but shapes the snippet text and the click-through rate from the results page. |
+| 3 | `H1Rule` | Exactly one non-empty `<h1>` (an image with `alt` inside also counts as text) | Marks the page's main topic for search engines and screen readers. No `h1` — `error`, several — `warning`. |
+| 4 | `HeadingHierarchyRule` | Headings without skipped levels (`h2` → `h4`) | A logical structure helps crawlers understand the content and improves accessibility. Going back up to a higher level (`h4` → `h2`) is not an error. |
+| 5 | `ImageAltRule` | Every `<img>` has an `alt` attribute | `alt` text is indexed for image search and is needed by screen readers. An empty `alt=""` is acceptable for decorative images. If half or more of the images lack `alt` — `error`, otherwise `warning`. |
+| 6 | `CanonicalRule` | `<link rel="canonical">` in `<head>`: present, single, absolute URL (search engines ignore it in `<body>`); matches `og:url` if one is set | Points to the primary version of the page and prevents duplicate-content problems (parameters, UTM, www/non-www). If the same page is named by different addresses, there is no main link: several different canonicals or an empty `href` — `error` (the message lists the addresses), `canonical` and `og:url` pointing to different addresses — `warning`. Host case, a trailing `/`, a `#fragment`, and the default port are not treated as differences. |
+| 7 | `RobotsMetaRule` | No `noindex` (or `none`) in `meta robots` / `googlebot` | An accidentally left `noindex` removes the page from the index entirely, and it is one of the costliest SEO mistakes. `nofollow` gives a `warning`. |
+| 8 | `ViewportRule` | `<meta name="viewport">` with `width=device-width` | Google indexes sites mobile-first, and without a viewport the page is considered not adapted for mobile. Disabling zoom (`user-scalable=no`) is a `warning` because of accessibility. |
+| 9 | `OpenGraphRule` | `og:title`, `og:description`, `og:image` (absolute URL) are present | Controls how the link looks on social networks and in messengers, which increases clicks and shares. |
+| 10 | `HtmlLangRule` | `lang` attribute on `<html>` with a valid value | Helps determine the content's language and region, and is also needed by screen readers and browser translators. |
 
-Усі правила працюють лише з DOM сторінки, без додаткових HTTP-запитів.
+All rules work only with the page's DOM, without extra HTTP requests.
 
-## Як завантажується сторінка
+## How a page is loaded
 
-`PageFetcher` бере HTML за URL і повертає його вже в UTF-8:
+`PageFetcher` fetches the HTML by URL and returns it already in UTF-8:
 
-- підтримуються лише `http` і `https`; редіректи (до 5) виконуються, а перехід на `file://` чи `ftp://` заборонено;
-- загальний ліміт часу на запит 10 с (однаково для cURL і для запасного варіанту на PHP streams);
-- відповідь має бути HTML-сторінкою: приймаються `text/html` і `application/xhtml+xml`, а SVG, RSS/Atom та інші XML-типи відхиляються з поясненням (відсутній `Content-Type` допускається);
-- статус має бути 2xx, а 4xx, 5xx і незавершений редірект дають зрозумілу помилку;
-- кодування визначається за BOM, заголовком `Content-Type` і тегом `<meta charset>`, тож сайти у `windows-1251`, `KOI8-R`, `ISO-8859-x` читаються правильно.
+- only `http` and `https` are supported; redirects (up to 5) are followed, and a redirect to `file://` or `ftp://` is forbidden;
+- the total time limit per request is 10 s (the same for cURL and for the PHP streams fallback);
+- the response must be an HTML page: `text/html` and `application/xhtml+xml` are accepted, while SVG, RSS/Atom, and other XML types are rejected with an explanation (a missing `Content-Type` is allowed);
+- the status must be 2xx, while 4xx, 5xx, and an unfinished redirect produce a clear error;
+- the encoding is detected from the BOM, the `Content-Type` header, and the `<meta charset>` tag, so sites in `windows-1251`, `KOI8-R`, and `ISO-8859-x` are read correctly.
 
-## Обмеження
+## Limitations
 
-- **Розмір сторінки.** Відповідь більша за 2 МБ (змінюється через `--max-size` або параметр `maxBytes` у `PageFetcher`) відхиляється. Типова сторінка важить до 700 КБ, і тоді процес займає ~28–32 МБ пам'яті. Розібране DOM-дерево займає приблизно в 30 разів більше за розмір HTML, тому сторінка на 4,8 МБ потребувала б ~150 МБ. Ліміт тримає найгірший випадок під контролем.
-- Аналізується HTML, який віддає сервер. Сторінки, що формуються JavaScript-ом на клієнті, можуть показати зайві помилки (наприклад, відсутній `<h1>`).
-- `RobotsMetaRule` читає лише `<meta name="robots">` і `<meta name="googlebot">`. Директиви для інших ботів (`bingbot`, `googlebot-news`) не враховуються.
-- Директиви індексації з HTTP-заголовка `X-Robots-Tag` не видно з HTML, тому перевіряється лише `<meta>`.
-- Правила не оцінюють якість контенту, швидкість і зовнішні посилання.
+- **Page size.** A response larger than 2 MB (configurable via `--max-size` or the `maxBytes` parameter of `PageFetcher`) is rejected. A typical page weighs up to 700 KB, and the process then uses ~28–32 MB of memory. The parsed DOM tree takes roughly 30 times the HTML size, so a 4.8 MB page would need ~150 MB. The limit keeps the worst case under control.
+- The HTML served by the server is analyzed. Pages rendered by client-side JavaScript may show false errors (for example, a missing `<h1>`).
+- `RobotsMetaRule` reads only `<meta name="robots">` and `<meta name="googlebot">`. Directives for other bots (`bingbot`, `googlebot-news`) are not taken into account.
+- Indexing directives from the `X-Robots-Tag` HTTP header are not visible from the HTML, so only `<meta>` is checked.
+- The rules don't evaluate content quality, speed, or external links.
 
-## Тести
+## Tests
 
 ```bash
-composer install      # разом із PHPUnit
-composer test         # або: php vendor/bin/phpunit
+composer install      # includes PHPUnit
+composer test         # or: php vendor/bin/phpunit
 ```
 
-Тести охоплюють кожне правило (граничні випадки, регістр, кирилицю), ядро, звіт, визначення кодування, розбір аргументів CLI, повний аудит на еталонних сторінках і завантажувач (редіректи, ліміти, таймаути, кодування). Для `PageFetcher` автоматично запускається локальний вбудований сервер PHP, тож інтернет не потрібен.
+The tests cover every rule (edge cases, letter case, Cyrillic), the core, the report, encoding detection, CLI argument parsing, a full audit on reference pages, and the fetcher (redirects, limits, timeouts, encodings). For `PageFetcher`, a local built-in PHP server is started automatically, so no internet is needed.
 
-### Примітка для Windows
+### Note for Windows
 
-PHP для Windows не містить пакета кореневих сертифікатів, тому cURL не може перевірити HTTPS. `PageFetcher` у такому разі використовує системне сховище сертифікатів Windows. Перевірка сертифіката при цьому не вимикається.
+PHP for Windows doesn't ship a root certificate bundle, so cURL can't verify HTTPS. In that case `PageFetcher` uses the Windows system certificate store. Certificate verification is not disabled.
 
-## Ліцензія
+## License
 
 MIT
