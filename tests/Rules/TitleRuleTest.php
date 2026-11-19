@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Aratornv1\SeoChecker\Tests\Rules;
 
 use Aratornv1\SeoChecker\Rules\TitleRule;
-use Aratornv1\SeoChecker\XPathFactory;
+use Aratornv1\SeoChecker\Tests\Support\RunsRules;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TitleRuleTest extends TestCase
 {
+    use RunsRules;
+
     /**
      * @return iterable<string, array{string, string}>
      */
@@ -32,6 +34,11 @@ final class TitleRuleTest extends TestCase
             . '<title>Second title that is long enough</title></head></html>',
             'warning',
         ];
+        yield 'empty title followed by a filled one is a duplicate, not empty' => [
+            '<html><head><title></title><title>A perfectly reasonable page title here</title></head></html>',
+            'warning',
+        ];
+        yield 'two empty titles' => ['<html><head><title></title><title> </title></head></html>', 'error'];
         yield 'cyrillic counted in characters, not bytes' => [
             // 36 characters (but 70+ bytes in UTF-8) - must be a success.
             '<html><head><title>Найкращий сайт про оптимізацію SEO</title></head></html>',
@@ -50,19 +57,16 @@ final class TitleRuleTest extends TestCase
     #[DataProvider('titleProvider')]
     public function testReturnsExpectedStatus(string $html, string $expectedStatus): void
     {
-        $result = (new TitleRule())->check((new XPathFactory())->create($html));
-
-        self::assertSame($expectedStatus, $result['status']);
-        self::assertNotSame('', $result['message']);
+        $this->assertStatus(new TitleRule(), $html, $expectedStatus);
     }
 
     public function testThresholdsAreConfigurable(): void
     {
-        $xpath = (new XPathFactory())->create('<html><head><title>Short</title></head></html>');
-
-        $result = (new TitleRule(minLength: 3, maxLength: 10))->check($xpath);
-
-        self::assertSame('success', $result['status']);
+        $this->assertStatus(
+            new TitleRule(minLength: 3, maxLength: 10),
+            '<html><head><title>Short</title></head></html>',
+            'success',
+        );
     }
 
     public function testHasName(): void

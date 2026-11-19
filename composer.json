@@ -9,6 +9,9 @@
         "ext-dom": "*",
         "ext-mbstring": "*"
     },
+    "suggest": {
+        "ext-curl": "Preferred HTTP transport (gzip support, strict protocol restrictions); PHP streams are used as a fallback"
+    },
     "require-dev": {
         "phpunit/phpunit": "^10.5 || ^11.0"
     },

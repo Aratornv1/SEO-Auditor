@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Aratornv1\SeoChecker\Rules;
 
+use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
+use Aratornv1\SeoChecker\Support\Text;
 use DOMXPath;
 
 /**
@@ -36,56 +38,47 @@ final class TitleRule implements RuleInterface
         $titles = $xpath->query('//head/title');
 
         if ($titles === false || $titles->length === 0) {
-            return $this->result('error', 'Тег <title> відсутній');
+            return Outcome::error('Тег <title> відсутній');
         }
 
-        $text = $this->normalize($titles->item(0)?->textContent ?? '');
+        $filled = [];
+        foreach ($titles as $title) {
+            $text = Text::normalize($title->textContent);
+            if ($text !== '') {
+                $filled[] = $text;
+            }
+        }
 
-        if ($text === '') {
-            return $this->result('error', 'Тег <title> порожній');
+        // Every <title> is empty.
+        if ($filled === []) {
+            return Outcome::error('Тег <title> порожній');
         }
 
         if ($titles->length > 1) {
-            return $this->result('warning', sprintf('Знайдено кілька тегів <title> (%d), має бути один', $titles->length));
+            return Outcome::warning(sprintf('Знайдено кілька тегів <title> (%d), має бути один', $titles->length));
         }
 
-        $length = mb_strlen($text);
+        $text = $filled[0];
+        $length = Text::length($text);
 
         if ($length < $this->minLength) {
-            return $this->result('warning', sprintf(
-                'Заголовок занадто короткий (%d символів, рекомендовано %d–%d)',
-                $length,
+            return Outcome::warning(sprintf(
+                'Заголовок занадто короткий (%s, рекомендовано %d–%d)',
+                Text::characters($length),
                 $this->minLength,
                 $this->maxLength,
             ));
         }
 
         if ($length > $this->maxLength) {
-            return $this->result('warning', sprintf(
-                'Заголовок занадто довгий (%d символів, рекомендовано %d–%d)',
-                $length,
+            return Outcome::warning(sprintf(
+                'Заголовок занадто довгий (%s, рекомендовано %d–%d)',
+                Text::characters($length),
                 $this->minLength,
                 $this->maxLength,
             ));
         }
 
-        return $this->result('success', sprintf('Заголовок має оптимальну довжину (%d символів)', $length));
-    }
-
-    /**
-     * Collapses whitespace so line breaks and indentation inside the tag
-     * do not inflate the measured length.
-     */
-    private function normalize(string $text): string
-    {
-        return trim((string) preg_replace('/\s+/u', ' ', $text));
-    }
-
-    /**
-     * @return array{status: string, message: string}
-     */
-    private function result(string $status, string $message): array
-    {
-        return ['status' => $status, 'message' => $message];
+        return Outcome::success(sprintf('Заголовок має оптимальну довжину (%s)', Text::characters($length)));
     }
 }

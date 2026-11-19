@@ -5,9 +5,9 @@ declare(strict_types=1);
 
 use Aratornv1\SeoChecker\Analyzer;
 use Aratornv1\SeoChecker\ConsoleReporter;
+use Aratornv1\SeoChecker\DefaultRules;
 use Aratornv1\SeoChecker\Exception\FetchException;
 use Aratornv1\SeoChecker\PageFetcher;
-use Aratornv1\SeoChecker\Rules\TitleRule;
 use Aratornv1\SeoChecker\Status;
 
 // Locate the Composer autoloader: either this package is the root project,
@@ -33,28 +33,108 @@ const EXIT_OK = 0;
 const EXIT_ISSUES = 1;
 const EXIT_USAGE = 2;
 
+// Upper bound for --max-size, in megabytes. Memory use grows roughly 30x
+// with the HTML size, so absurd values are rejected as a typo guard.
+const MAX_SIZE_CEILING_MB = 100;
+
 function printUsage(): void
 {
+    $default = PageFetcher::DEFAULT_MAX_BYTES / 1048576;
+
     echo <<<TXT
     Usage: seo-check [options] <url>
 
     Options:
-      --no-emoji   Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
-      --no-color   Disable ANSI colors
-      -h, --help   Show this help
+      --max-size=N  Reject pages larger than N megabytes (default: {$default}, max: 100)
+      --no-emoji    Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
+      --no-color    Disable ANSI colors
+      -h, --help    Show this help
 
     Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage/network error
 
     TXT;
 }
 
+/**
+ * Parses the --max-size value (megabytes, decimals allowed) into bytes.
+ *
+ * @return int|null null when the value is not a valid size
+ */
+function parseMaxSize(string $value): ?int
+{
+    if (!is_numeric($value)) {
+        return null;
+    }
+
+    $megabytes = (float) $value;
+
+    if ($megabytes <= 0 || $megabytes > MAX_SIZE_CEILING_MB) {
+        return null;
+    }
+
+    return max(1, (int) round($megabytes * 1048576));
+}
+
 // --- Parse arguments ---------------------------------------------------------
 $args = array_slice($argv, 1);
 $useEmoji = true;
 $useColor = true;
+$maxBytes = PageFetcher::DEFAULT_MAX_BYTES;
 $url = null;
 
-foreach ($args as $arg) {
+$optionsEnded = false;
+
+for ($i = 0; $i < count($args); $i++) {
+    $arg = $args[$i];
+
+    // "--" ends option parsing, so a URL that starts with "-" can still be passed.
+    if (!$optionsEnded && $arg === '--') {
+        $optionsEnded = true;
+        continue;
+    }
+
+    $isOption = !$optionsEnded && str_starts_with($arg, '-');
+
+    if (!$isOption) {
+        // A second positional argument is an error, not a silent override.
+        if ($url !== null) {
+            fwrite(STDERR, "Only one URL can be checked at a time (got: {$url} and {$arg})." . PHP_EOL);
+            exit(EXIT_USAGE);
+        }
+        $url = $arg;
+        continue;
+    }
+
+    // Support both "--max-size=3" and "--max-size 3".
+    if ($arg === '--max-size' || str_starts_with($arg, '--max-size=')) {
+        if ($arg === '--max-size') {
+            // Do not swallow the next token when it is another option.
+            $next = $args[$i + 1] ?? '';
+            $value = ($next === '' || str_starts_with($next, '-')) ? '' : $next;
+            if ($value !== '') {
+                $i++;
+            }
+        } else {
+            $value = substr($arg, strlen('--max-size='));
+        }
+
+        $parsed = parseMaxSize($value);
+
+        if ($parsed === null) {
+            fwrite(STDERR, $value === ''
+                ? 'Missing value for --max-size: expected a number of megabytes.' . PHP_EOL
+                : sprintf(
+                    'Invalid --max-size value "%s": expected a number of megabytes between 0 and %d.' . PHP_EOL,
+                    $value,
+                    MAX_SIZE_CEILING_MB,
+                ));
+            exit(EXIT_USAGE);
+        }
+
+        $maxBytes = $parsed;
+        continue;
+    }
+
     switch ($arg) {
         case '-h':
         case '--help':
@@ -67,12 +147,9 @@ foreach ($args as $arg) {
             $useColor = false;
             break;
         default:
-            if (str_starts_with($arg, '-')) {
-                fwrite(STDERR, "Unknown option: {$arg}" . PHP_EOL);
-                printUsage();
-                exit(EXIT_USAGE);
-            }
-            $url = $arg;
+            fwrite(STDERR, "Unknown option: {$arg}" . PHP_EOL);
+            printUsage();
+            exit(EXIT_USAGE);
     }
 }
 
@@ -103,10 +180,12 @@ if (PHP_OS_FAMILY === 'Windows' && $isTty) {
 $useColor = $useColor && $isTty && getenv('NO_COLOR') === false;
 
 // --- Compose and run the analyzer -------------------------------------------
-// Rules are registered explicitly here: this is the single place to change
-// when a rule is added or removed; the engine itself stays untouched.
-$analyzer = new Analyzer(new PageFetcher());
-$analyzer->addRule(new TitleRule());
+// The engine knows nothing about concrete rules. The standard set lives in
+// DefaultRules; add your own with $analyzer->addRule(new MyRule()).
+$analyzer = new Analyzer(new PageFetcher(maxBytes: $maxBytes));
+foreach (DefaultRules::create() as $rule) {
+    $analyzer->addRule($rule);
+}
 
 try {
     $results = $analyzer->analyze($url);

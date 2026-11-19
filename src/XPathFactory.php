@@ -12,6 +12,9 @@ use DOMXPath;
  */
 final class XPathFactory
 {
+    /**
+     * @param string $html page markup, expected to be UTF-8 (PageFetcher guarantees it)
+     */
     public function create(string $html): DOMXPath
     {
         $document = new DOMDocument();
@@ -21,14 +24,26 @@ final class XPathFactory
         $previous = libxml_use_internal_errors(true);
 
         try {
-            // The <?xml encoding> prefix forces libxml to read the input as
-            // UTF-8; without it non-ASCII text (e.g. Cyrillic) gets garbled.
-            $document->loadHTML('<?xml encoding="UTF-8">' . $html);
+            // loadHTML() throws on an empty string; an empty page simply has no elements.
+            $document->loadHTML($html === '' ? '<html></html>' : $this->toAsciiEntities($html));
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
         }
 
         return new DOMXPath($document);
+    }
+
+    /**
+     * Replaces every non-ASCII character with a numeric entity (&#1055;).
+     *
+     * libxml guesses the document encoding itself and gives <meta charset>
+     * priority over anything a caller declares, so a UTF-8 page that still
+     * says charset=windows-1251 would be misread. Pure-ASCII input removes
+     * the guesswork: entities always decode to the right Unicode characters.
+     */
+    private function toAsciiEntities(string $html): string
+    {
+        return mb_encode_numericentity($html, [0x80, 0x10FFFF, 0, 0x1FFFFF], 'UTF-8');
     }
 }
