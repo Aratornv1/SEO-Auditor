@@ -76,7 +76,8 @@ final class CanonicalRule implements RuleInterface
 
         if ($ogUrl !== null && $this->normalizeUrl($ogUrl) !== $this->normalizeUrl($href)) {
             return Outcome::warning(sprintf(
-                'Canonical (%s) і og:url (%s) вказують на різні адреси; головною вважається canonical, вирівняйте og:url',
+                'Canonical (%s) і og:url (%s) вказують на різні адреси; '
+                . 'головною вважається canonical, вирівняйте og:url',
                 $href,
                 $ogUrl,
             ));

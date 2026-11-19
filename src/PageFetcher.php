@@ -216,7 +216,11 @@ final class PageFetcher implements HtmlProviderInterface
 
     private function timedOut(string $url): FetchException
     {
-        return new FetchException(sprintf('Час очікування відповіді від %s вичерпано (%d с)', $url, $this->timeoutSeconds));
+        return new FetchException(sprintf(
+            'Час очікування відповіді від %s вичерпано (%d с)',
+            $url,
+            $this->timeoutSeconds,
+        ));
     }
 
     /**
@@ -237,7 +241,8 @@ final class PageFetcher implements HtmlProviderInterface
 
         // A missing Content-Type is tolerated (some servers omit it). Only real
         // web pages are accepted: feeds, SVG and other XML types are not.
-        if ($response['contentType'] !== ''
+        if (
+            $response['contentType'] !== ''
             && preg_match('#^\s*(text/html|application/xhtml\+xml)\s*(;|$)#i', $response['contentType']) !== 1
         ) {
             throw new FetchException(sprintf(

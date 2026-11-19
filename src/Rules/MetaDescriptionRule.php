@@ -52,7 +52,10 @@ final class MetaDescriptionRule implements RuleInterface
         }
 
         if (count($descriptions) > 1) {
-            return Outcome::warning(sprintf('Знайдено кілька мета-тегів description (%d), має бути один', count($descriptions)));
+            return Outcome::warning(sprintf(
+                'Знайдено кілька мета-тегів description (%d), має бути один',
+                count($descriptions),
+            ));
         }
 
         $text = $filled[0];

@@ -33,7 +33,10 @@ final class HtmlLangRule implements RuleInterface
         }
 
         if (preg_match(self::LANG_PATTERN, $lang) !== 1) {
-            return Outcome::warning(sprintf('Некоректне значення lang="%s" (очікується, наприклад, "uk" або "en-US")', $lang));
+            return Outcome::warning(sprintf(
+                'Некоректне значення lang="%s" (очікується, наприклад, "uk" або "en-US")',
+                $lang,
+            ));
         }
 
         return Outcome::success(sprintf('Мову сторінки задано: lang="%s"', $lang));

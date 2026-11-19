@@ -54,7 +54,10 @@ final class ViewportRule implements RuleInterface
         }
 
         if ($this->blocksZoom($directives)) {
-            return Outcome::warning('Viewport забороняє масштабування (user-scalable=no / maximum-scale=1), це погіршує доступність');
+            return Outcome::warning(
+                'Viewport забороняє масштабування (user-scalable=no / maximum-scale=1), '
+                . 'це погіршує доступність'
+            );
         }
 
         return Outcome::success('Viewport налаштовано коректно');
