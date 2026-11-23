@@ -48,7 +48,7 @@ final class HeadingHierarchyRuleTest extends TestCase
             '<html><body><h1>A</h1><h3>B</h3></body></html>',
         );
 
-        self::assertStringContainsString('h1 → h3', $result['message']);
+        self::assertStringContainsString('h1 → h3', $result->message);
     }
 
     public function testManySkipsAreSummarised(): void
@@ -56,7 +56,7 @@ final class HeadingHierarchyRuleTest extends TestCase
         $body = '<h1>A</h1>' . str_repeat('<h3>x</h3><h5>y</h5>', 3);
         $result = $this->runRule(new HeadingHierarchyRule(), "<html><body>{$body}</body></html>");
 
-        self::assertSame('warning', $result['status']);
-        self::assertStringContainsString('і ще', $result['message']);
+        self::assertSame('warning', $result->status->value);
+        self::assertStringContainsString('і ще', $result->message);
     }
 }

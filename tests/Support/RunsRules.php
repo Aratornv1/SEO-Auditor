@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aratornv1\SeoChecker\Tests\Support;
 
+use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\XPathFactory;
 
@@ -12,10 +13,7 @@ use Aratornv1\SeoChecker\XPathFactory;
  */
 trait RunsRules
 {
-    /**
-     * @return array{status: string, message: string}
-     */
-    private function runRule(RuleInterface $rule, string $html): array
+    private function runRule(RuleInterface $rule, string $html): Outcome
     {
         return $rule->check((new XPathFactory())->create($html));
     }
@@ -24,7 +22,7 @@ trait RunsRules
     {
         $result = $this->runRule($rule, $html);
 
-        self::assertSame($expected, $result['status'], 'Unexpected status, message: ' . $result['message']);
-        self::assertNotSame('', $result['message']);
+        self::assertSame($expected, $result->status->value, 'Unexpected status, message: ' . $result->message);
+        self::assertNotSame('', $result->message);
     }
 }

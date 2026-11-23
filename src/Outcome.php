@@ -5,36 +5,33 @@ declare(strict_types=1);
 namespace Aratornv1\SeoChecker;
 
 /**
- * Named constructors for the array a rule returns, so rules never repeat
- * status strings and a typo cannot produce an invalid result.
+ * What a rule returns: a status and a message, without the rule name.
+ *
+ * It is a typed value object, so a rule cannot return an invalid status or
+ * forget the message. The named constructors keep rule code short:
+ * `return Outcome::error('...')`. Analyzer adds the rule name and turns it
+ * into a Result.
  */
 final class Outcome
 {
-    private function __construct()
-    {
+    public function __construct(
+        public readonly Status $status,
+        public readonly string $message,
+    ) {
     }
 
-    /**
-     * @return array{status: 'success', message: string}
-     */
-    public static function success(string $message): array
+    public static function success(string $message): self
     {
-        return ['status' => Status::Success->value, 'message' => $message];
+        return new self(Status::Success, $message);
     }
 
-    /**
-     * @return array{status: 'warning', message: string}
-     */
-    public static function warning(string $message): array
+    public static function warning(string $message): self
     {
-        return ['status' => Status::Warning->value, 'message' => $message];
+        return new self(Status::Warning, $message);
     }
 
-    /**
-     * @return array{status: 'error', message: string}
-     */
-    public static function error(string $message): array
+    public static function error(string $message): self
     {
-        return ['status' => Status::Error->value, 'message' => $message];
+        return new self(Status::Error, $message);
     }
 }

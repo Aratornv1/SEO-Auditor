@@ -7,6 +7,7 @@ namespace Aratornv1\SeoChecker\Tests;
 use Aratornv1\SeoChecker\Analyzer;
 use Aratornv1\SeoChecker\Exception\FetchException;
 use Aratornv1\SeoChecker\HtmlProviderInterface;
+use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\Status;
 use DOMXPath;
@@ -17,9 +18,9 @@ final class AnalyzerTest extends TestCase
     public function testRunsAllRulesInRegistrationOrder(): void
     {
         $analyzer = (new Analyzer($this->providerReturning('<html><head><title>x</title></head></html>')))
-            ->addRule($this->rule('First', 'success', 'ok'))
-            ->addRule($this->rule('Second', 'warning', 'hmm'))
-            ->addRule($this->rule('Third', 'error', 'bad'));
+            ->addRule($this->rule('First', Status::Success, 'ok'))
+            ->addRule($this->rule('Second', Status::Warning, 'hmm'))
+            ->addRule($this->rule('Third', Status::Error, 'bad'));
 
         $results = $analyzer->analyze('https://example.com');
 
@@ -39,9 +40,9 @@ final class AnalyzerTest extends TestCase
                 return 'Probe';
             }
 
-            public function check(DOMXPath $xpath): array
+            public function check(DOMXPath $xpath): Outcome
             {
-                return ['status' => 'success', 'message' => (string) $xpath->evaluate('string(//head/title)')];
+                return Outcome::success((string) $xpath->evaluate('string(//head/title)'));
             }
         };
 
@@ -60,7 +61,7 @@ final class AnalyzerTest extends TestCase
                 return 'Broken';
             }
 
-            public function check(DOMXPath $xpath): array
+            public function check(DOMXPath $xpath): Outcome
             {
                 throw new \RuntimeException('boom');
             }
@@ -68,7 +69,7 @@ final class AnalyzerTest extends TestCase
 
         $results = (new Analyzer($this->providerReturning('<html></html>')))
             ->addRule($broken)
-            ->addRule($this->rule('Healthy', 'success', 'ok'))
+            ->addRule($this->rule('Healthy', Status::Success, 'ok'))
             ->analyze('https://example.com');
 
         self::assertSame(Status::Error, $results[0]->status);
@@ -77,13 +78,28 @@ final class AnalyzerTest extends TestCase
         self::assertSame(Status::Success, $results[1]->status);
     }
 
-    public function testInvalidRuleOutputBecomesErrorResult(): void
+    public function testWrongReturnTypeBecomesErrorResult(): void
     {
+        $wrong = new class implements RuleInterface {
+            public function getName(): string
+            {
+                return 'Wrong';
+            }
+
+            public function check(DOMXPath $xpath): Outcome
+            {
+                // A rule that ignores the contract: PHP raises a TypeError on return.
+                return ['status' => 'success', 'message' => 'ok'];
+            }
+        };
+
         $results = (new Analyzer($this->providerReturning('<html></html>')))
-            ->addRule($this->rule('BadStatus', 'great', 'ok'))
+            ->addRule($wrong)
+            ->addRule($this->rule('Healthy', Status::Success, 'ok'))
             ->analyze('https://example.com');
 
         self::assertSame(Status::Error, $results[0]->status);
+        self::assertSame(Status::Success, $results[1]->status);
     }
 
     public function testFetchFailureIsPropagated(): void
@@ -114,12 +130,12 @@ final class AnalyzerTest extends TestCase
         };
     }
 
-    private function rule(string $name, string $status, string $message): RuleInterface
+    private function rule(string $name, Status $status, string $message): RuleInterface
     {
         return new class($name, $status, $message) implements RuleInterface {
             public function __construct(
                 private readonly string $name,
-                private readonly string $status,
+                private readonly Status $status,
                 private readonly string $message,
             ) {
             }
@@ -129,9 +145,9 @@ final class AnalyzerTest extends TestCase
                 return $this->name;
             }
 
-            public function check(DOMXPath $xpath): array
+            public function check(DOMXPath $xpath): Outcome
             {
-                return ['status' => $this->status, 'message' => $this->message];
+                return new Outcome($this->status, $this->message);
             }
         };
     }

@@ -86,12 +86,33 @@ final class CliTest extends TestCase
         self::assertStringContainsString('--max-size', $out);
     }
 
-    public function testSecondUrlIsAnErrorInsteadOfSilentOverride(): void
+    public function testSeveralUrlsAreAuditedOneByOne(): void
     {
-        [$code, $out] = $this->cli(['http://127.0.0.1:1/a', 'http://127.0.0.1:1/b']);
+        $url = self::$server->url('/huge');
+
+        [$code, $out] = $this->cli(['--no-emoji', $url, $url]);
+
+        self::assertContains($code, [0, 1], $out);
+        self::assertSame(2, substr_count($out, 'Підсумок'));
+    }
+
+    public function testUnreachableUrlDoesNotStopTheOthers(): void
+    {
+        [$code, $out] = $this->cli(['--no-emoji', 'http://127.0.0.1:1/', self::$server->url('/huge')]);
+
+        // The failed download wins the exit code, but the second page is still audited.
+        self::assertSame(2, $code);
+        self::assertStringContainsString('Підсумок', $out);
+    }
+
+    public function testMoreThanFiveUrlsIsAUsageError(): void
+    {
+        $urls = array_fill(0, 6, 'http://127.0.0.1:1/');
+
+        [$code, $out] = $this->cli($urls);
 
         self::assertSame(2, $code);
-        self::assertStringContainsString('Only one URL', $out);
+        self::assertStringContainsString('At most 5 URLs', $out);
     }
 
     public function testMaxSizeDoesNotSwallowTheNextOption(): void

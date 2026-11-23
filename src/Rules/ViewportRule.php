@@ -30,7 +30,7 @@ final class ViewportRule implements RuleInterface
         return 'Viewport';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $tags = $this->meta->byName($xpath, 'viewport');
 

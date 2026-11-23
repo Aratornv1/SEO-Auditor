@@ -7,8 +7,7 @@ namespace Aratornv1\SeoChecker;
 /**
  * Allowed statuses of a rule result.
  *
- * Rules return plain string values (see RuleInterface); Analyzer converts them
- * into this enum and rejects anything else.
+ * A rule picks one of them through Outcome; Analyzer copies it into the Result.
  */
 enum Status: string
 {

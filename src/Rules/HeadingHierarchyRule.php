@@ -24,7 +24,7 @@ final class HeadingHierarchyRule implements RuleInterface
         return 'Heading hierarchy';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         // A union query returns nodes in document order.
         $headings = $xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6');

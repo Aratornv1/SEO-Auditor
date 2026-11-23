@@ -120,10 +120,10 @@ final class CanonicalRuleTest extends TestCase
             . '<meta property="og:url" content="https://example.com/copy"></head></html>',
         );
 
-        self::assertSame('warning', $result['status']);
-        self::assertStringContainsString('https://example.com/main', $result['message']);
-        self::assertStringContainsString('https://example.com/copy', $result['message']);
-        self::assertStringContainsString('головною вважається canonical', $result['message']);
+        self::assertSame('warning', $result->status->value);
+        self::assertStringContainsString('https://example.com/main', $result->message);
+        self::assertStringContainsString('https://example.com/copy', $result->message);
+        self::assertStringContainsString('головною вважається canonical', $result->message);
     }
 
     public function testConflictMessageListsTheDifferentAddresses(): void
@@ -134,9 +134,9 @@ final class CanonicalRuleTest extends TestCase
             . '<link rel="canonical" href="https://example.com/b"></head></html>',
         );
 
-        self::assertSame('error', $result['status']);
-        self::assertStringContainsString('https://example.com/a', $result['message']);
-        self::assertStringContainsString('https://example.com/b', $result['message']);
+        self::assertSame('error', $result->status->value);
+        self::assertStringContainsString('https://example.com/a', $result->message);
+        self::assertStringContainsString('https://example.com/b', $result->message);
     }
 
     public function testConflictMessageIsShortenedForManyAddresses(): void
@@ -148,8 +148,8 @@ final class CanonicalRuleTest extends TestCase
 
         $result = $this->runRule(new CanonicalRule(), "<html><head>{$links}</head></html>");
 
-        self::assertStringContainsString('і ще 3', $result['message']);
-        self::assertStringNotContainsString('https://example.com/6', $result['message']);
+        self::assertStringContainsString('і ще 3', $result->message);
+        self::assertStringNotContainsString('https://example.com/6', $result->message);
     }
 
     public function testMatchingOgUrlIsMentionedInSuccessMessage(): void
@@ -160,7 +160,7 @@ final class CanonicalRuleTest extends TestCase
             . '<meta property="og:url" content="https://example.com/page"></head></html>',
         );
 
-        self::assertStringContainsString('збігається з og:url', $result['message']);
+        self::assertStringContainsString('збігається з og:url', $result->message);
     }
 
     public function testSuccessMessageContainsUrl(): void
@@ -170,6 +170,6 @@ final class CanonicalRuleTest extends TestCase
             '<html><head><link rel="canonical" href="https://example.com/page"></head></html>',
         );
 
-        self::assertStringContainsString('https://example.com/page', $result['message']);
+        self::assertStringContainsString('https://example.com/page', $result->message);
     }
 }

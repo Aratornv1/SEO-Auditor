@@ -64,7 +64,7 @@ final class MetaDescriptionRuleTest extends TestCase
             . str_repeat('word ', 20) . '"></head></html>',
         );
 
-        self::assertStringContainsString('кілька', $result['message']);
+        self::assertStringContainsString('кілька', $result->message);
     }
 
     public function testThresholdsAreConfigurable(): void
