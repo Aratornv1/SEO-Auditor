@@ -24,7 +24,7 @@ final class HtmlLangRule implements RuleInterface
         return 'HTML lang';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $lang = trim((string) $xpath->evaluate('string(/html/@lang)'));
 

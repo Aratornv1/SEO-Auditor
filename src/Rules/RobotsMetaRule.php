@@ -36,7 +36,7 @@ final class RobotsMetaRule implements RuleInterface
         return 'Robots meta';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $directives = $this->collectDirectives($xpath);
 

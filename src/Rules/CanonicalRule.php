@@ -39,7 +39,7 @@ final class CanonicalRule implements RuleInterface
         return 'Canonical';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $links = $this->findCanonicalLinks($xpath);
 

@@ -33,7 +33,7 @@ final class TitleRule implements RuleInterface
         return 'Title';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $titles = $xpath->query('//head/title');
 

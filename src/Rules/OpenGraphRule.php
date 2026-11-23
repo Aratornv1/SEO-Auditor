@@ -32,7 +32,7 @@ final class OpenGraphRule implements RuleInterface
         return 'Open Graph';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $values = [];
         $missing = [];

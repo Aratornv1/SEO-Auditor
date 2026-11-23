@@ -58,19 +58,11 @@ final class Analyzer
         $name = $rule->getName();
 
         try {
-            $raw = $rule->check($xpath);
+            $outcome = $rule->check($xpath);
         } catch (Throwable $e) {
             return new Result($name, Status::Error, 'Правило завершилося з помилкою: ' . $e->getMessage());
         }
 
-        // Validate the array returned by the rule before trusting it.
-        $status = is_string($raw['status'] ?? null) ? Status::tryFrom($raw['status']) : null;
-        $message = $raw['message'] ?? null;
-
-        if ($status === null || !is_string($message)) {
-            return new Result($name, Status::Error, 'Правило повернуло некоректний результат.');
-        }
-
-        return new Result($name, $status, $message);
+        return new Result($name, $outcome->status, $outcome->message);
     }
 }

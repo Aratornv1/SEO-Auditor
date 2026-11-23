@@ -33,7 +33,7 @@ final class MetaDescriptionRule implements RuleInterface
         return 'Meta description';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $descriptions = $this->meta->byName($xpath, 'description');
 

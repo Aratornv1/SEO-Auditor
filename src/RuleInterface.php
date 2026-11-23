@@ -22,8 +22,6 @@ interface RuleInterface
 
     /**
      * Runs the check against the page DOM.
-     *
-     * @return array{status: 'success'|'warning'|'error', message: string}
      */
-    public function check(DOMXPath $xpath): array;
+    public function check(DOMXPath $xpath): Outcome;
 }

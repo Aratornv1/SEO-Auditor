@@ -60,8 +60,8 @@ final class OpenGraphRuleTest extends TestCase
             '<html><head><meta property="og:title" content="T"></head></html>',
         );
 
-        self::assertStringContainsString('og:description', $result['message']);
-        self::assertStringContainsString('og:image', $result['message']);
-        self::assertStringNotContainsString('og:title', $result['message']);
+        self::assertStringContainsString('og:description', $result->message);
+        self::assertStringContainsString('og:image', $result->message);
+        self::assertStringNotContainsString('og:title', $result->message);
     }
 }

@@ -42,7 +42,7 @@ Then run `composer update aratornv1/seo-checker`. Composer creates a symlink to 
 php bin/seo-check https://example.com
 ```
 
-On Linux/macOS the file is executable, so you can also run it as `./bin/seo-check https://example.com`. The scheme is optional: `seo-check example.com` automatically becomes `https://example.com`. One address is checked per run: a second URL causes an error. To pass an address that starts with `-`, put `--` before it.
+On Linux/macOS the file is executable, so you can also run it as `./bin/seo-check https://example.com`. The scheme is optional: `seo-check example.com` automatically becomes `https://example.com`. Up to 5 addresses can be passed in one run (`seo-check a.com b.com`), they are audited one after another; a sixth URL causes an error. If one page cannot be downloaded, the others are still audited. To pass an address that starts with `-`, put `--` before it.
 
 | Option | Purpose |
 |--------|---------|
@@ -85,17 +85,18 @@ src/
 ├── XPathFactory.php           HTML → DOMXPath
 ├── ReporterInterface.php      output abstraction
 ├── ConsoleReporter.php        terminal report
+├── Cli.php                    command-line runner: arguments, exit codes (bin/seo-check is a thin wrapper)
 ├── DefaultRules.php           default set of 10 rules
 ├── Result.php, Status.php, Outcome.php
-├── Exception/FetchException.php
+├── Exception/                 FetchException, UsageException
 ├── Support/                   Text, MetaTagReader (small shared helpers)
 └── Rules/                     10 rules (one class per check)
 ```
 
-- `RuleInterface::check(DOMXPath $xpath): array` returns `['status' => 'success|warning|error', 'message' => '...']`.
+- `RuleInterface::check(DOMXPath $xpath): Outcome` returns a typed `Outcome` (a `Status` and a message). The `Analyzer` adds the rule name and turns it into a `Result`.
 - `Analyzer::addRule(RuleInterface $rule)` registers a rule. `Analyzer::analyze($url)` returns the results in registration order.
 - The core doesn't know any specific rule, so new rules are added without changing it (Open/Closed).
-- A failure in one rule (an exception or an invalid response) is turned into a result with the `error` status, and the remaining rules keep running.
+- A failure in one rule (an exception or a wrong return type) is turned into a result with the `error` status, and the remaining rules keep running.
 - `Analyzer` depends on abstractions (`HtmlProviderInterface`), so tests don't need a network (Dependency Inversion).
 
 ### Using it as a library
@@ -135,7 +136,7 @@ final class AuthorMetaRule implements RuleInterface
         return 'Author meta';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $found = $xpath->query('//meta[@name="author"]')->length > 0;
 
@@ -146,7 +147,7 @@ final class AuthorMetaRule implements RuleInterface
 }
 ```
 
-Then register it: `$analyzer->addRule(new AuthorMetaRule());`. `Outcome::success/warning/error` are convenient constructors for the same `['status' => …, 'message' => …]` array, which you can also return by hand.
+Then register it: `$analyzer->addRule(new AuthorMetaRule());`. `Outcome::success/warning/error` are named constructors for the status, so the rule only writes the message. A rule that returns anything other than an `Outcome` (or throws) is reported as an `error` result and the other rules keep running.
 
 ## The 10 SEO metrics and why they matter
 

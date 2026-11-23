@@ -26,7 +26,7 @@ final class H1Rule implements RuleInterface
         return 'H1';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         // h1 may sit anywhere in the document (header, main, article).
         $headings = $xpath->query('//h1');

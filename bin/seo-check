@@ -4,11 +4,7 @@
 declare(strict_types=1);
 
 use Aratornv1\SeoChecker\Analyzer;
-use Aratornv1\SeoChecker\ConsoleReporter;
-use Aratornv1\SeoChecker\DefaultRules;
-use Aratornv1\SeoChecker\Exception\FetchException;
-use Aratornv1\SeoChecker\PageFetcher;
-use Aratornv1\SeoChecker\Status;
+use Aratornv1\SeoChecker\Cli;
 
 // Locate the Composer autoloader: either this package is the root project,
 // or it is installed as a dependency inside another project's vendor/.
@@ -26,141 +22,8 @@ foreach ($autoloadCandidates as $autoload) {
 
 if (!class_exists(Analyzer::class)) {
     fwrite(STDERR, "Composer autoloader not found. Run `composer install` first." . PHP_EOL);
+    // A literal code: without the autoloader the Cli class (and its constants) cannot be loaded.
     exit(2);
-}
-
-const EXIT_OK = 0;
-const EXIT_ISSUES = 1;
-const EXIT_USAGE = 2;
-
-// Upper bound for --max-size, in megabytes. Memory use grows roughly 30x
-// with the HTML size, so absurd values are rejected as a typo guard.
-const MAX_SIZE_CEILING_MB = 100;
-
-function printUsage(): void
-{
-    $default = PageFetcher::DEFAULT_MAX_BYTES / 1048576;
-
-    echo <<<TXT
-    Usage: seo-check [options] <url>
-
-    Options:
-      --max-size=N  Reject pages larger than N megabytes (default: {$default}, max: 100)
-      --no-emoji    Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
-      --no-color    Disable ANSI colors
-      -h, --help    Show this help
-
-    Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage/network error
-
-    TXT;
-}
-
-/**
- * Parses the --max-size value (megabytes, decimals allowed) into bytes.
- *
- * @return int|null null when the value is not a valid size
- */
-function parseMaxSize(string $value): ?int
-{
-    if (!is_numeric($value)) {
-        return null;
-    }
-
-    $megabytes = (float) $value;
-
-    if ($megabytes <= 0 || $megabytes > MAX_SIZE_CEILING_MB) {
-        return null;
-    }
-
-    return max(1, (int) round($megabytes * 1048576));
-}
-
-// --- Parse arguments ---------------------------------------------------------
-$args = array_slice($argv, 1);
-$useEmoji = true;
-$useColor = true;
-$maxBytes = PageFetcher::DEFAULT_MAX_BYTES;
-$url = null;
-
-$optionsEnded = false;
-
-for ($i = 0; $i < count($args); $i++) {
-    $arg = $args[$i];
-
-    // "--" ends option parsing, so a URL that starts with "-" can still be passed.
-    if (!$optionsEnded && $arg === '--') {
-        $optionsEnded = true;
-        continue;
-    }
-
-    $isOption = !$optionsEnded && str_starts_with($arg, '-');
-
-    if (!$isOption) {
-        // A second positional argument is an error, not a silent override.
-        if ($url !== null) {
-            fwrite(STDERR, "Only one URL can be checked at a time (got: {$url} and {$arg})." . PHP_EOL);
-            exit(EXIT_USAGE);
-        }
-        $url = $arg;
-        continue;
-    }
-
-    // Support both "--max-size=3" and "--max-size 3".
-    if ($arg === '--max-size' || str_starts_with($arg, '--max-size=')) {
-        if ($arg === '--max-size') {
-            // Do not swallow the next token when it is another option.
-            $next = $args[$i + 1] ?? '';
-            $value = ($next === '' || str_starts_with($next, '-')) ? '' : $next;
-            if ($value !== '') {
-                $i++;
-            }
-        } else {
-            $value = substr($arg, strlen('--max-size='));
-        }
-
-        $parsed = parseMaxSize($value);
-
-        if ($parsed === null) {
-            fwrite(STDERR, $value === ''
-                ? 'Missing value for --max-size: expected a number of megabytes.' . PHP_EOL
-                : sprintf(
-                    'Invalid --max-size value "%s": expected a number of megabytes between 0 and %d.' . PHP_EOL,
-                    $value,
-                    MAX_SIZE_CEILING_MB,
-                ));
-            exit(EXIT_USAGE);
-        }
-
-        $maxBytes = $parsed;
-        continue;
-    }
-
-    switch ($arg) {
-        case '-h':
-        case '--help':
-            printUsage();
-            exit(EXIT_OK);
-        case '--no-emoji':
-            $useEmoji = false;
-            break;
-        case '--no-color':
-            $useColor = false;
-            break;
-        default:
-            fwrite(STDERR, "Unknown option: {$arg}" . PHP_EOL);
-            printUsage();
-            exit(EXIT_USAGE);
-    }
-}
-
-if ($url === null) {
-    printUsage();
-    exit(EXIT_USAGE);
-}
-
-// Allow "example.com" without a scheme.
-if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
-    $url = 'https://' . $url;
 }
 
 // --- Terminal setup ----------------------------------------------------------
@@ -177,29 +40,6 @@ if (PHP_OS_FAMILY === 'Windows' && $isTty) {
 }
 
 // Colors only make sense on a real terminal and when NO_COLOR is not set.
-$useColor = $useColor && $isTty && getenv('NO_COLOR') === false;
+$colorAllowed = $isTty && getenv('NO_COLOR') === false;
 
-// --- Compose and run the analyzer -------------------------------------------
-// The engine knows nothing about concrete rules. The standard set lives in
-// DefaultRules; add your own with $analyzer->addRule(new MyRule()).
-$analyzer = new Analyzer(new PageFetcher(maxBytes: $maxBytes));
-foreach (DefaultRules::create() as $rule) {
-    $analyzer->addRule($rule);
-}
-
-try {
-    $results = $analyzer->analyze($url);
-} catch (FetchException $e) {
-    fwrite(STDERR, $e->getMessage() . PHP_EOL);
-    exit(EXIT_USAGE);
-}
-
-echo (new ConsoleReporter($useEmoji, $useColor))->render($url, $results);
-
-foreach ($results as $result) {
-    if ($result->status === Status::Error) {
-        exit(EXIT_ISSUES);
-    }
-}
-
-exit(EXIT_OK);
+exit((new Cli(colorAllowed: $colorAllowed))->run(array_slice($argv, 1)));

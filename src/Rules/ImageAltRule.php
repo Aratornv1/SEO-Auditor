@@ -28,7 +28,7 @@ final class ImageAltRule implements RuleInterface
         return 'Image alt';
     }
 
-    public function check(DOMXPath $xpath): array
+    public function check(DOMXPath $xpath): Outcome
     {
         $total = (int) $xpath->evaluate('count(//img)');
 
