@@ -6,6 +6,7 @@ namespace Aratornv1\SeoChecker\Rules;
 
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
+use Aratornv1\SeoChecker\Support\LengthCheck;
 use Aratornv1\SeoChecker\Support\Text;
 use DOMXPath;
 
@@ -58,27 +59,6 @@ final class TitleRule implements RuleInterface
             return Outcome::warning(sprintf('Знайдено кілька тегів <title> (%d), має бути один', $titles->length));
         }
 
-        $text = $filled[0];
-        $length = Text::length($text);
-
-        if ($length < $this->minLength) {
-            return Outcome::warning(sprintf(
-                'Заголовок занадто короткий (%s, рекомендовано %d–%d)',
-                Text::characters($length),
-                $this->minLength,
-                $this->maxLength,
-            ));
-        }
-
-        if ($length > $this->maxLength) {
-            return Outcome::warning(sprintf(
-                'Заголовок занадто довгий (%s, рекомендовано %d–%d)',
-                Text::characters($length),
-                $this->minLength,
-                $this->maxLength,
-            ));
-        }
-
-        return Outcome::success(sprintf('Заголовок має оптимальну довжину (%s)', Text::characters($length)));
+        return LengthCheck::outcome($filled[0], $this->minLength, $this->maxLength, 'Заголовок');
     }
 }
