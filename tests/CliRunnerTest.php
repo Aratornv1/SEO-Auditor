@@ -7,6 +7,7 @@ namespace Aratornv1\SeoChecker\Tests;
 use Aratornv1\SeoChecker\Cli;
 use Aratornv1\SeoChecker\Exception\FetchException;
 use Aratornv1\SeoChecker\HtmlProviderInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -76,40 +77,84 @@ final class CliRunnerTest extends TestCase
         self::assertStringContainsString('[FAIL]', $out);
     }
 
-    public function testSeveralUrlsAreAuditedInOrder(): void
-    {
-        $good = $this->fixture('good.html');
-        $provider = $this->provider(['https://a.test' => $good, 'https://b.test' => $good]);
-
-        [$code, $out] = $this->runCli(['--no-emoji', 'a.test', 'b.test'], $provider);
-
-        self::assertSame(Cli::EXIT_OK, $code);
-        self::assertSame(['https://a.test', 'https://b.test'], $provider->requested);
-        self::assertSame(2, substr_count($out, 'Підсумок'));
-        self::assertLessThan(strpos($out, 'https://b.test'), strpos($out, 'https://a.test'));
-    }
-
-    public function testFailedDownloadDoesNotStopTheOthersAndWinsTheExitCode(): void
-    {
-        // The first page has rule errors (would be code 1), the second cannot be downloaded.
-        $provider = $this->provider(['https://bad.test' => $this->fixture('bad.html')]);
-
-        [$code, $out, $err] = $this->runCli(['--no-emoji', 'bad.test', 'missing.test'], $provider);
-
-        self::assertSame(Cli::EXIT_USAGE, $code);
-        self::assertStringContainsString('Підсумок', $out);
-        self::assertStringContainsString('missing.test', $err);
-    }
-
-    public function testMoreThanFiveUrlsIsAUsageError(): void
+    public function testSecondUrlIsAUsageError(): void
     {
         $provider = $this->provider([]);
 
-        [$code, , $err] = $this->runCli(['a.test', 'b.test', 'c.test', 'd.test', 'e.test', 'f.test'], $provider);
+        [$code, , $err] = $this->runCli(['a.test', 'b.test'], $provider);
 
         self::assertSame(Cli::EXIT_USAGE, $code);
-        self::assertStringContainsString('At most 5 URLs', $err);
+        self::assertStringContainsString('Only one URL', $err);
         self::assertSame([], $provider->requested, 'Nothing is fetched when the arguments are invalid.');
+    }
+
+    public function testFailedDownloadIsReportedOnStderrInTextMode(): void
+    {
+        [$code, $out, $err] = $this->runCli(['missing.test']);
+
+        self::assertSame(Cli::EXIT_USAGE, $code);
+        self::assertSame('', $out);
+        self::assertStringContainsString('missing.test', $err);
+    }
+
+    public function testJsonFormatPrintsOneObjectWithAllResults(): void
+    {
+        $provider = $this->provider(['https://example.com' => $this->fixture('good.html')]);
+
+        [$code, $out, $err] = $this->runCli(['--format=json', 'example.com'], $provider);
+        $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertSame(Cli::EXIT_OK, $code);
+        self::assertSame('', $err);
+        self::assertSame('https://example.com', $data['url']);
+        self::assertCount(10, $data['results']);
+        self::assertSame(['rule', 'status', 'message'], array_keys($data['results'][0]));
+        self::assertSame('Title', $data['results'][0]['rule']);
+    }
+
+    public function testJsonFormatKeepsExitCodeOneForRuleErrors(): void
+    {
+        $provider = $this->provider(['https://example.com' => $this->fixture('bad.html')]);
+
+        [$code, $out] = $this->runCli(['--format', 'json', 'example.com'], $provider);
+        $statuses = array_column(json_decode($out, true, flags: JSON_THROW_ON_ERROR)['results'], 'status');
+
+        self::assertSame(Cli::EXIT_ISSUES, $code);
+        self::assertContains('error', $statuses);
+    }
+
+    public function testJsonFormatReportsFailedDownloadAsJsonLine(): void
+    {
+        [$code, $out, $err] = $this->runCli(['--format=json', 'missing.test']);
+        $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertSame(Cli::EXIT_USAGE, $code);
+        self::assertSame('', $err, 'stdout carries the error, stderr stays empty.');
+        self::assertSame('https://missing.test', $data['url']);
+        self::assertStringContainsString('missing.test', $data['error']);
+        self::assertArrayNotHasKey('results', $data);
+    }
+
+    /**
+     * @return iterable<string, array{list<string>, string}>
+     */
+    public static function invalidFormatProvider(): iterable
+    {
+        yield 'unknown value' => [['--format=xml', 'example.com'], 'Invalid --format value "xml"'];
+        yield 'missing value' => [['example.com', '--format'], 'Missing value for --format'];
+        yield 'next option is not a value' => [['--format', '--no-emoji', 'example.com'], 'Missing value for --format'];
+    }
+
+    /**
+     * @param list<string> $args
+     */
+    #[DataProvider('invalidFormatProvider')]
+    public function testInvalidFormatIsAUsageError(array $args, string $message): void
+    {
+        [$code, , $err] = $this->runCli($args);
+
+        self::assertSame(Cli::EXIT_USAGE, $code);
+        self::assertStringContainsString($message, $err);
     }
 
     public function testColorIsOnlyUsedWhenTheTerminalAllowsIt(): void

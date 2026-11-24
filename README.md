@@ -42,11 +42,12 @@ Then run `composer update aratornv1/seo-checker`. Composer creates a symlink to 
 php bin/seo-check https://example.com
 ```
 
-On Linux/macOS the file is executable, so you can also run it as `./bin/seo-check https://example.com`. The scheme is optional: `seo-check example.com` automatically becomes `https://example.com`. Up to 5 addresses can be passed in one run (`seo-check a.com b.com`), they are audited one after another; a sixth URL causes an error. If one page cannot be downloaded, the others are still audited. To pass an address that starts with `-`, put `--` before it.
+On Linux/macOS the file is executable, so you can also run it as `./bin/seo-check https://example.com`. The scheme is optional: `seo-check example.com` automatically becomes `https://example.com`. One address is checked per run: a second URL causes an error. To pass an address that starts with `-`, put `--` before it.
 
 | Option | Purpose |
 |--------|---------|
 | `--max-size=N` | Reject pages larger than N megabytes (default `2`, maximum `100`, fractional values such as `0.5` are allowed). The `--max-size 3` form also works |
+| `--format=F` | Output format: `text` (default, the report below) or `json` (one JSON object, see below). The `--format json` form also works |
 | `--no-emoji` | Use text markers `[ OK ] [WARN] [FAIL]` instead of icons |
 | `--no-color` | Disable ANSI colors (they are disabled anyway when the output is not a terminal or `NO_COLOR` is set) |
 | `-h`, `--help` | Show help |
@@ -74,6 +75,20 @@ SEO-аудит: http://127.0.0.1:8099/bad.html
 
 Statuses: ✅ `success` — all good, ⚠️ `warning` — worth improving, ❌ `error` — a serious problem.
 
+### JSON output
+
+`--format=json` prints one JSON object on a single line, convenient for CI and scripts:
+
+```bash
+php bin/seo-check --format=json example.com | jq '.results[] | select(.status == "error")'
+```
+
+```json
+{"url":"https://example.com","results":[{"rule":"Title","status":"warning","message":"Заголовок занадто короткий (4 символи, рекомендовано 30–60)"}, ...]}
+```
+
+If the page cannot be downloaded, stdout still contains JSON: `{"url":"https://example.com","error":"..."}`. The exit codes are the same as in text mode. Argument errors (unknown option, bad value) are printed to stderr as plain text.
+
 ## Architecture
 
 ```
@@ -85,6 +100,7 @@ src/
 ├── XPathFactory.php           HTML → DOMXPath
 ├── ReporterInterface.php      output abstraction
 ├── ConsoleReporter.php        terminal report
+├── JsonReporter.php           JSON report (--format=json)
 ├── Cli.php                    command-line runner: arguments, exit codes (bin/seo-check is a thin wrapper)
 ├── DefaultRules.php           default set of 10 rules
 ├── Result.php, Status.php, Outcome.php

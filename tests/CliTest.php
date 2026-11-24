@@ -86,33 +86,21 @@ final class CliTest extends TestCase
         self::assertStringContainsString('--max-size', $out);
     }
 
-    public function testSeveralUrlsAreAuditedOneByOne(): void
+    public function testSecondUrlIsAnErrorInsteadOfSilentOverride(): void
     {
-        $url = self::$server->url('/huge');
+        [$code, $out] = $this->cli(['http://127.0.0.1:1/a', 'http://127.0.0.1:1/b']);
 
-        [$code, $out] = $this->cli(['--no-emoji', $url, $url]);
+        self::assertSame(2, $code);
+        self::assertStringContainsString('Only one URL', $out);
+    }
+
+    public function testJsonFormatOutputIsValidJson(): void
+    {
+        [$code, $out] = $this->cli(['--format=json', self::$server->url('/huge')]);
 
         self::assertContains($code, [0, 1], $out);
-        self::assertSame(2, substr_count($out, 'Підсумок'));
-    }
-
-    public function testUnreachableUrlDoesNotStopTheOthers(): void
-    {
-        [$code, $out] = $this->cli(['--no-emoji', 'http://127.0.0.1:1/', self::$server->url('/huge')]);
-
-        // The failed download wins the exit code, but the second page is still audited.
-        self::assertSame(2, $code);
-        self::assertStringContainsString('Підсумок', $out);
-    }
-
-    public function testMoreThanFiveUrlsIsAUsageError(): void
-    {
-        $urls = array_fill(0, 6, 'http://127.0.0.1:1/');
-
-        [$code, $out] = $this->cli($urls);
-
-        self::assertSame(2, $code);
-        self::assertStringContainsString('At most 5 URLs', $out);
+        $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+        self::assertCount(10, $data['results']);
     }
 
     public function testMaxSizeDoesNotSwallowTheNextOption(): void
