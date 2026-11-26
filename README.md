@@ -50,11 +50,13 @@ On Linux/macOS the file is executable, so you can also run it as `./bin/seo-chec
 |--------|---------|
 | `--max-size=N` | Reject pages larger than N megabytes (default `2`, maximum `100`, fractional values such as `0.5` are allowed). The `--max-size 3` form also works |
 | `--format=F` | Output format: `text` (default, the report below) or `json` (one JSON object, see below). The `--format json` form also works |
+| `--strict` | Treat warnings as failures: exit code `1` if any rule returns `warning` or `error`. Useful in CI that should allow zero findings |
+| `--extra-rules` | Also run the optional rules (see [Optional rules](#optional-rules)) after the standard ten |
 | `--no-emoji` | Use text markers `[ OK ] [WARN] [FAIL]` instead of icons |
 | `--no-color` | Disable ANSI colors (they are disabled anyway when the output is not a terminal or `NO_COLOR` is set) |
 | `-h`, `--help` | Show help |
 
-Exit codes: `0` — no errors (warnings are allowed), `1` — at least one `error`, `2` — incorrect usage or the page could not be downloaded. This is convenient for CI.
+Exit codes: `0` — no errors (warnings are allowed), `1` — at least one `error` (or a `warning` with `--strict`), `2` — incorrect usage or the page could not be downloaded. This is convenient for CI.
 
 Example report for a page with problems (the report messages are currently in Ukrainian):
 
@@ -105,6 +107,7 @@ src/
 ├── JsonReporter.php           JSON report (--format=json)
 ├── Cli.php                    command-line runner: arguments, exit codes (bin/seo-check is a thin wrapper)
 ├── DefaultRules.php           default set of 10 rules
+├── ExtraRules.php             optional rules (--extra-rules)
 ├── Result.php, Status.php, Outcome.php
 ├── Exception/                 FetchException, UsageException
 ├── Support/                   small shared helpers: Text, LengthCheck, MetaTagReader, XPathFunctions, Charset, HttpHeaders
@@ -183,6 +186,15 @@ Then register it: `$analyzer->addRule(new AuthorMetaRule());`. `Outcome::success
 | 10 | `HtmlLangRule` | `lang` attribute on `<html>` with a valid value | Helps determine the content's language and region, and is also needed by screen readers and browser translators. |
 
 All rules work only with the page's DOM, without extra HTTP requests.
+
+### Optional rules
+
+Two more rules are available but are not part of the standard ten. The CLI runs them with `--extra-rules`; in code, register `ExtraRules::create()` next to `DefaultRules::create()`.
+
+| Rule | What it checks | Why it matters |
+|------|----------------|----------------|
+| `MixedContentRule` | Resources loaded over `http://`: scripts, stylesheets, frames (`error`) and images, video, audio, `srcset` (`warning`). Links (`<a href>`) are not resources and are not checked | On an HTTPS page browsers block insecure scripts and styles, which breaks the page, and warn about insecure images. Rules see only the DOM, not the page URL, so any `http://` resource is reported |
+| `WordCountRule` | At least 300 words of visible text in `<body>` (configurable: `new WordCountRule(minWords: 500)`). Text in `<script>`, `<style>`, `<noscript>` and `<template>` is not counted | Pages with very little text ("thin content") rarely rank well, because search engines have nothing to understand the topic from |
 
 ## How a page is loaded
 

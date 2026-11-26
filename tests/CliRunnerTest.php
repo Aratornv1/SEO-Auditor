@@ -77,6 +77,45 @@ final class CliRunnerTest extends TestCase
         self::assertStringContainsString('[FAIL]', $out);
     }
 
+    public function testStrictModeTurnsWarningsIntoExitCodeOne(): void
+    {
+        // The reference page without its meta description: one warning, no errors.
+        $page = (string) preg_replace('/\s*<meta name="description"[^>]*>/', '', $this->fixture('good.html'));
+
+        [$normal] = $this->runCli(['example.com'], $this->provider(['https://example.com' => $page]));
+        [$strict] = $this->runCli(['--strict', 'example.com'], $this->provider(['https://example.com' => $page]));
+
+        self::assertSame(Cli::EXIT_OK, $normal);
+        self::assertSame(Cli::EXIT_ISSUES, $strict);
+    }
+
+    public function testStrictModeStillPassesACleanPage(): void
+    {
+        $provider = $this->provider(['https://example.com' => $this->fixture('good.html')]);
+
+        [$code] = $this->runCli(['--strict', 'example.com'], $provider);
+
+        self::assertSame(Cli::EXIT_OK, $code);
+    }
+
+    public function testExtraRulesAreOnlyRunWhenAsked(): void
+    {
+        $page = $this->fixture('good.html');
+
+        [, $default] = $this->runCli(['--format=json', 'example.com'], $this->provider(['https://example.com' => $page]));
+        [$code, $extra] = $this->runCli(
+            ['--format=json', '--extra-rules', 'example.com'],
+            $this->provider(['https://example.com' => $page]),
+        );
+        $extraRules = array_column($this->decodeReport($extra)['results'], 'rule');
+
+        self::assertCount(10, $this->decodeReport($default)['results']);
+        self::assertCount(12, $extraRules);
+        self::assertSame(['Mixed content', 'Word count'], array_slice($extraRules, 10));
+        // The short reference page only gets a "too little text" warning, so the exit code stays 0.
+        self::assertSame(Cli::EXIT_OK, $code);
+    }
+
     public function testSecondUrlIsAUsageError(): void
     {
         $provider = $this->provider([]);
