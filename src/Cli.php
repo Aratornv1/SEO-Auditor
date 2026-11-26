@@ -9,7 +9,7 @@ use Aratornv1\SeoChecker\Exception\UsageException;
 use Closure;
 
 /**
- * The command line runner: parses arguments, audits each URL and returns an exit code.
+ * The command line runner: parses arguments, audits the URL and returns an exit code.
  *
  * It never calls exit() and writes only to the streams it is given, so tests can
  * run it in-process with a stub HTML provider and in-memory streams.
@@ -24,8 +24,7 @@ final class Cli
     // with the HTML size, so absurd values are rejected as a typo guard.
     public const MAX_SIZE_CEILING_MB = 100;
 
-    // How many URLs can be audited in one run. The pages are fetched one by one.
-    public const MAX_URLS = 5;
+    public const FORMATS = ['text', 'json'];
 
     /** @var Closure(int): HtmlProviderInterface builds the HTML source for a size limit in bytes */
     private readonly Closure $providerFactory;
@@ -87,52 +86,58 @@ final class Cli
             $analyzer->addRule($rule);
         }
 
-        $reporter = new ConsoleReporter($options['useEmoji'], $options['useColor'] && $this->colorAllowed);
-        $exitCode = self::EXIT_OK;
+        $json = $options['format'] === 'json';
+        $url = $options['url'];
 
-        // Pages are audited one by one. A page that cannot be downloaded does not stop
-        // the others, but it makes the whole run exit with EXIT_USAGE.
-        foreach ($options['urls'] as $url) {
-            try {
-                $results = $analyzer->analyze($url);
-            } catch (FetchException $e) {
-                fwrite($this->err, $e->getMessage() . PHP_EOL);
-                $exitCode = self::EXIT_USAGE;
-                continue;
-            }
+        try {
+            $results = $analyzer->analyze($url);
+        } catch (FetchException $e) {
+            // In JSON mode stdout stays machine-readable, so the error is a JSON line there too.
+            fwrite(
+                $json ? $this->out : $this->err,
+                $json ? (new JsonReporter())->renderError($url, $e->getMessage()) : $e->getMessage() . PHP_EOL,
+            );
 
-            fwrite($this->out, $reporter->render($url, $results));
+            return self::EXIT_USAGE;
+        }
 
-            foreach ($results as $result) {
-                // EXIT_ISSUES must not hide an earlier EXIT_USAGE.
-                if ($result->status === Status::Error && $exitCode === self::EXIT_OK) {
-                    $exitCode = self::EXIT_ISSUES;
-                    break;
-                }
+        $reporter = $json
+            ? new JsonReporter()
+            : new ConsoleReporter($options['useEmoji'], $options['useColor'] && $this->colorAllowed);
+
+        fwrite($this->out, $reporter->render($url, $results));
+
+        foreach ($results as $result) {
+            if ($result->status === Status::Error) {
+                return self::EXIT_ISSUES;
             }
         }
 
-        return $exitCode;
+        return self::EXIT_OK;
     }
 
     /**
      * @param list<string> $args
      *
-     * @return array{urls: list<string>, maxBytes: int, useEmoji: bool, useColor: bool, help: bool}
+     * @return array{url: string, maxBytes: int, format: string, useEmoji: bool, useColor: bool, help: bool}
      *
      * @throws UsageException
      */
     private function parseArguments(array $args): array
     {
-        $useEmoji = true;
-        $useColor = true;
-        $maxBytes = PageFetcher::DEFAULT_MAX_BYTES;
-        $urls = [];
-
+        $options = [
+            'url' => '',
+            'maxBytes' => PageFetcher::DEFAULT_MAX_BYTES,
+            'format' => 'text',
+            'useEmoji' => true,
+            'useColor' => true,
+            'help' => false,
+        ];
+        $url = null;
         $optionsEnded = false;
 
-        // Walk through the CLI arguments: anything that is not an option is a URL,
-        // options (--max-size, --no-emoji, ...) set the flags. A plain index loop is
+        // Walk through the CLI arguments: anything that is not an option is the URL,
+        // options (--max-size, --format, ...) set the flags. A plain index loop is
         // used so "--max-size 3" can consume the next argument via $i++.
         for ($i = 0; $i < count($args); $i++) {
             $arg = $args[$i];
@@ -146,29 +151,16 @@ final class Cli
             $isOption = !$optionsEnded && str_starts_with($arg, '-');
 
             if (!$isOption) {
-                // Too many URLs is an error, not a silent truncation.
-                if (count($urls) >= self::MAX_URLS) {
-                    throw new UsageException(
-                        'At most ' . self::MAX_URLS . " URLs can be checked at a time (extra: {$arg}).",
-                    );
+                // A second positional argument is an error, not a silent override.
+                if ($url !== null) {
+                    throw new UsageException("Only one URL can be checked at a time (got: {$url} and {$arg}).");
                 }
-                $urls[] = $arg;
+                $url = $arg;
                 continue;
             }
 
-            // Support both "--max-size=3" and "--max-size 3".
             if ($arg === '--max-size' || str_starts_with($arg, '--max-size=')) {
-                if ($arg === '--max-size') {
-                    // Do not swallow the next token when it is another option.
-                    $next = $args[$i + 1] ?? '';
-                    $value = ($next === '' || str_starts_with($next, '-')) ? '' : $next;
-                    if ($value !== '') {
-                        $i++;
-                    }
-                } else {
-                    $value = substr($arg, strlen('--max-size='));
-                }
-
+                $value = $this->optionValue($args, $i, '--max-size');
                 $parsed = $this->parseMaxSize($value);
 
                 if ($parsed === null) {
@@ -181,48 +173,74 @@ final class Cli
                         ));
                 }
 
-                $maxBytes = $parsed;
+                $options['maxBytes'] = $parsed;
+                continue;
+            }
+
+            if ($arg === '--format' || str_starts_with($arg, '--format=')) {
+                $value = $this->optionValue($args, $i, '--format');
+
+                if (!in_array($value, self::FORMATS, true)) {
+                    throw new UsageException($value === ''
+                        ? 'Missing value for --format: expected text or json.'
+                        : sprintf('Invalid --format value "%s": expected text or json.', $value));
+                }
+
+                $options['format'] = $value;
                 continue;
             }
 
             switch ($arg) {
                 case '-h':
                 case '--help':
-                    return [
-                        'urls' => [],
-                        'maxBytes' => $maxBytes,
-                        'useEmoji' => $useEmoji,
-                        'useColor' => $useColor,
-                        'help' => true,
-                    ];
+                    $options['help'] = true;
+
+                    return $options;
                 case '--no-emoji':
-                    $useEmoji = false;
+                    $options['useEmoji'] = false;
                     break;
                 case '--no-color':
-                    $useColor = false;
+                    $options['useColor'] = false;
                     break;
                 default:
                     throw new UsageException("Unknown option: {$arg}", true);
             }
         }
 
-        if ($urls === []) {
+        if ($url === null) {
             throw new UsageException('', true);
         }
 
         // Allow "example.com" without a scheme.
-        $urls = array_map(
-            static fn (string $url): string => preg_match('#^[a-z][a-z0-9+.-]*://#i', $url) ? $url : 'https://' . $url,
-            $urls,
-        );
+        $options['url'] = preg_match('#^[a-z][a-z0-9+.-]*://#i', $url) ? $url : 'https://' . $url;
 
-        return [
-            'urls' => $urls,
-            'maxBytes' => $maxBytes,
-            'useEmoji' => $useEmoji,
-            'useColor' => $useColor,
-            'help' => false,
-        ];
+        return $options;
+    }
+
+    /**
+     * Reads the value of an option given as "--name=value" or "--name value".
+     *
+     * In the second form the next argument is consumed (via $i), unless it is
+     * missing or is another option: then '' is returned and nothing is consumed.
+     *
+     * @param list<string> $args
+     */
+    private function optionValue(array $args, int &$i, string $name): string
+    {
+        if ($args[$i] !== $name) {
+            return substr($args[$i], strlen($name . '='));
+        }
+
+        $next = $args[$i + 1] ?? '';
+
+        // Do not swallow the next token when it is another option.
+        if ($next === '' || str_starts_with($next, '-')) {
+            return '';
+        }
+
+        $i++;
+
+        return $next;
     }
 
     /**
@@ -249,20 +267,18 @@ final class Cli
     {
         $default = PageFetcher::DEFAULT_MAX_BYTES / 1048576;
         $ceiling = self::MAX_SIZE_CEILING_MB;
-        $maxUrls = self::MAX_URLS;
 
         return <<<TXT
-        Usage: seo-check [options] <url> [<url> ...]
-
-        Up to {$maxUrls} URLs are checked one after another.
+        Usage: seo-check [options] <url>
 
         Options:
           --max-size=N  Reject pages larger than N megabytes (default: {$default}, max: {$ceiling})
+          --format=F    Output format: text (default) or json
           --no-emoji    Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
           --no-color    Disable ANSI colors
           -h, --help    Show this help
 
-        Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage error or a page could not be downloaded
+        Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage error or the page could not be downloaded
 
         TXT;
     }

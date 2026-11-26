@@ -7,6 +7,7 @@ namespace Aratornv1\SeoChecker\Rules;
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\Support\MetaTagReader;
+use Aratornv1\SeoChecker\Support\LengthCheck;
 use Aratornv1\SeoChecker\Support\Text;
 use DOMXPath;
 
@@ -58,27 +59,12 @@ final class MetaDescriptionRule implements RuleInterface
             ));
         }
 
-        $text = $filled[0];
-        $length = Text::length($text);
-
-        if ($length < $this->minLength) {
-            return Outcome::warning(sprintf(
-                'Опис занадто короткий (%s, рекомендовано %d–%d)',
-                Text::characters($length),
-                $this->minLength,
-                $this->maxLength,
-            ));
-        }
-
-        if ($length > $this->maxLength) {
-            return Outcome::warning(sprintf(
-                'Опис занадто довгий (%s, рекомендовано %d–%d), пошуковик його обріже',
-                Text::characters($length),
-                $this->minLength,
-                $this->maxLength,
-            ));
-        }
-
-        return Outcome::success(sprintf('Опис має оптимальну довжину (%s)', Text::characters($length)));
+        return LengthCheck::outcome(
+            $filled[0],
+            $this->minLength,
+            $this->maxLength,
+            'Опис',
+            ', пошуковик його обріже',
+        );
     }
 }
