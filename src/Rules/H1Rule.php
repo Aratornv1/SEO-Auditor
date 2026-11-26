@@ -7,6 +7,8 @@ namespace Aratornv1\SeoChecker\Rules;
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\Support\Text;
+use Aratornv1\SeoChecker\Support\XPathFunctions;
+use DOMElement;
 use DOMNode;
 use DOMXPath;
 
@@ -37,6 +39,10 @@ final class H1Rule implements RuleInterface
 
         $names = [];
         foreach ($headings as $heading) {
+            if (!$heading instanceof DOMElement) {
+                continue;
+            }
+
             $name = $this->accessibleName($xpath, $heading);
             if ($name !== '') {
                 $names[] = $name;
@@ -71,6 +77,6 @@ final class H1Rule implements RuleInterface
             return $text;
         }
 
-        return Text::normalize((string) $xpath->evaluate('string(.//img/@alt)', $heading));
+        return Text::normalize(XPathFunctions::string($xpath, './/img/@alt', $heading));
     }
 }

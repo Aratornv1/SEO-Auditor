@@ -55,7 +55,7 @@ final class OpenGraphRule implements RuleInterface
             return Outcome::warning('Бракує Open Graph-тегів: ' . implode(', ', $missing));
         }
 
-        if (preg_match('#^https?://#i', $values['og:image']) !== 1) {
+        if (preg_match('#^https?://#i', $values['og:image'] ?? '') !== 1) {
             return Outcome::warning('og:image має бути абсолютною адресою (інакше соцмережі не покажуть зображення)');
         }
 

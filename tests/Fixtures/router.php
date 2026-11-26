@@ -3,7 +3,8 @@
 // Router script for PHP's built-in web server, used only by PageFetcherTest.
 // It emulates the HTTP situations the fetcher has to handle.
 
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+$path = parse_url(is_string($uri) ? $uri : '/', PHP_URL_PATH);
 
 switch ($path) {
     case '/ok':

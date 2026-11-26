@@ -1,0 +1,8 @@
+parameters:
+    # The strictest level; set explicitly (not "max") so a PHPStan upgrade
+    # that adds a level does not suddenly fail CI.
+    level: 10
+    paths:
+        - src
+        - bin/seo-check
+        - tests

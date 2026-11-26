@@ -22,7 +22,7 @@ final class TextTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{int, string}>
+     * @return iterable<int, array{int, string}>
      */
     public static function charactersProvider(): iterable
     {

@@ -42,4 +42,5 @@ if (PHP_OS_FAMILY === 'Windows' && $isTty) {
 // Colors only make sense on a real terminal and when NO_COLOR is not set.
 $colorAllowed = $isTty && getenv('NO_COLOR') === false;
 
-exit((new Cli(colorAllowed: $colorAllowed))->run(array_slice($argv, 1)));
+// $argv exists in the CLI SAPI; the fallback only keeps static analysis happy elsewhere.
+exit((new Cli(colorAllowed: $colorAllowed))->run(array_slice($argv ?? [], 1)));

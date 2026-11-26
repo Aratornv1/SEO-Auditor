@@ -36,7 +36,7 @@ final class HttpHeaders
             }
         }
 
-        return array_values(array_slice($lines, $start));
+        return array_slice($lines, $start);
     }
 
     /**

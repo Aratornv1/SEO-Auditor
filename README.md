@@ -1,5 +1,7 @@
 # SEO Auditor (`seo-checker`)
 
+[![CI](https://github.com/Aratornv1/SEO-Auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Aratornv1/SEO-Auditor/actions/workflows/ci.yml)
+
 A console SEO auditor for web pages, written in plain PHP. The package downloads a page's HTML by URL, runs it through 10 independent rules, and prints a clear report in the terminal.
 
 The architecture is extensible through the **Strategy** pattern: every check is a separate class implementing `RuleInterface`. Adding a new check doesn't require changing the core.
@@ -105,7 +107,7 @@ src/
 ├── DefaultRules.php           default set of 10 rules
 ├── Result.php, Status.php, Outcome.php
 ├── Exception/                 FetchException, UsageException
-├── Support/                   Text, MetaTagReader (small shared helpers)
+├── Support/                   small shared helpers: Text, LengthCheck, MetaTagReader, XPathFunctions, Charset, HttpHeaders
 └── Rules/                     10 rules (one class per check)
 ```
 
@@ -203,9 +205,14 @@ All rules work only with the page's DOM, without extra HTTP requests.
 ## Tests
 
 ```bash
-composer install      # includes PHPUnit
-composer test         # or: php vendor/bin/phpunit
+composer install      # includes PHPUnit, PHP_CodeSniffer and PHPStan
+composer test         # tests only (or: php vendor/bin/phpunit)
+composer lint         # PSR-12 code style (phpcs.xml.dist)
+composer analyse      # PHPStan static analysis, level 10 (phpstan.neon.dist)
+composer check        # all of the above
 ```
+
+GitHub Actions runs the tests on PHP 8.1–8.5 and the style and static analysis checks on every push to `main` and on every pull request (`.github/workflows/ci.yml`).
 
 The tests cover every rule (edge cases, letter case, Cyrillic), the core, the report, encoding detection, CLI argument parsing, a full audit on reference pages, and the fetcher (redirects, limits, timeouts, encodings). For `PageFetcher`, a local built-in PHP server is started automatically, so no internet is needed.
 

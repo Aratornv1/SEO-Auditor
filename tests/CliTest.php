@@ -100,6 +100,8 @@ final class CliTest extends TestCase
 
         self::assertContains($code, [0, 1], $out);
         $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertIsArray($data['results'] ?? null);
         self::assertCount(10, $data['results']);
     }
 
