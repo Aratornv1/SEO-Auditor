@@ -6,6 +6,7 @@ namespace Aratornv1\SeoChecker\Tests;
 
 use Aratornv1\SeoChecker\Analyzer;
 use Aratornv1\SeoChecker\DefaultRules;
+use Aratornv1\SeoChecker\ExtraRules;
 use Aratornv1\SeoChecker\HtmlProviderInterface;
 use Aratornv1\SeoChecker\Result;
 use Aratornv1\SeoChecker\Status;
@@ -22,6 +23,15 @@ final class FullAuditTest extends TestCase
 
         self::assertCount(10, $names);
         self::assertCount(10, array_unique($names), 'Rule names must be unique.');
+    }
+
+    public function testExtraRulesAreSeparateFromTheDefaultSet(): void
+    {
+        $default = array_map(static fn ($rule) => $rule->getName(), DefaultRules::create());
+        $extra = array_map(static fn ($rule) => $rule->getName(), ExtraRules::create());
+
+        self::assertSame(['Mixed content', 'Word count'], $extra);
+        self::assertSame([], array_intersect($default, $extra), 'Optional rules must not repeat default ones.');
     }
 
     public function testWellOptimisedPagePassesEveryRule(): void

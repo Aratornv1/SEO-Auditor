@@ -85,6 +85,11 @@ final class Cli
         foreach (DefaultRules::create() as $rule) {
             $analyzer->addRule($rule);
         }
+        if ($options['extraRules']) {
+            foreach (ExtraRules::create() as $rule) {
+                $analyzer->addRule($rule);
+            }
+        }
 
         $json = $options['format'] === 'json';
         $url = $options['url'];
@@ -107,8 +112,9 @@ final class Cli
 
         fwrite($this->out, $reporter->render($url, $results));
 
+        // Warnings change the exit code only with --strict.
         foreach ($results as $result) {
-            if ($result->status === Status::Error) {
+            if ($result->status === Status::Error || ($options['strict'] && $result->status === Status::Warning)) {
                 return self::EXIT_ISSUES;
             }
         }
@@ -119,7 +125,16 @@ final class Cli
     /**
      * @param list<string> $args
      *
-     * @return array{url: string, maxBytes: int, format: string, useEmoji: bool, useColor: bool, help: bool}
+     * @return array{
+     *     url: string,
+     *     maxBytes: int,
+     *     format: string,
+     *     strict: bool,
+     *     extraRules: bool,
+     *     useEmoji: bool,
+     *     useColor: bool,
+     *     help: bool,
+     * }
      *
      * @throws UsageException
      */
@@ -129,6 +144,8 @@ final class Cli
             'url' => '',
             'maxBytes' => PageFetcher::DEFAULT_MAX_BYTES,
             'format' => 'text',
+            'strict' => false,
+            'extraRules' => false,
             'useEmoji' => true,
             'useColor' => true,
             'help' => false,
@@ -196,6 +213,12 @@ final class Cli
                     $options['help'] = true;
 
                     return $options;
+                case '--strict':
+                    $options['strict'] = true;
+                    break;
+                case '--extra-rules':
+                    $options['extraRules'] = true;
+                    break;
                 case '--no-emoji':
                     $options['useEmoji'] = false;
                     break;
@@ -272,13 +295,16 @@ final class Cli
         Usage: seo-check [options] <url>
 
         Options:
-          --max-size=N  Reject pages larger than N megabytes (default: {$default}, max: {$ceiling})
-          --format=F    Output format: text (default) or json
-          --no-emoji    Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
-          --no-color    Disable ANSI colors
-          -h, --help    Show this help
+          --max-size=N   Reject pages larger than N megabytes (default: {$default}, max: {$ceiling})
+          --format=F     Output format: text (default) or json
+          --strict       Treat warnings as failures (exit code 1)
+          --extra-rules  Also run the optional rules: mixed content, word count
+          --no-emoji     Use plain-text markers ([ OK ] [WARN] [FAIL]) instead of emoji
+          --no-color     Disable ANSI colors
+          -h, --help     Show this help
 
-        Exit codes: 0 - no errors, 1 - at least one rule failed, 2 - usage error or the page could not be downloaded
+        Exit codes: 0 - no errors, 1 - at least one rule failed (or a warning with --strict),
+                    2 - usage error or the page could not be downloaded
 
         TXT;
     }
