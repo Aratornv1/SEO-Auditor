@@ -10,6 +10,7 @@ use Aratornv1\SeoChecker\HtmlProviderInterface;
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\Status;
+use Aratornv1\SeoChecker\Support\XPathFunctions;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
 
@@ -42,7 +43,7 @@ final class AnalyzerTest extends TestCase
 
             public function check(DOMXPath $xpath): Outcome
             {
-                return Outcome::success((string) $xpath->evaluate('string(//head/title)'));
+                return Outcome::success(XPathFunctions::string($xpath, '//head/title'));
             }
         };
 
@@ -89,7 +90,7 @@ final class AnalyzerTest extends TestCase
             public function check(DOMXPath $xpath): Outcome
             {
                 // A rule that ignores the contract: PHP raises a TypeError on return.
-                return ['status' => 'success', 'message' => 'ok'];
+                return ['status' => 'success', 'message' => 'ok']; // @phpstan-ignore return.type (deliberate)
             }
         };
 
@@ -118,7 +119,7 @@ final class AnalyzerTest extends TestCase
 
     private function providerReturning(string $html): HtmlProviderInterface
     {
-        return new class($html) implements HtmlProviderInterface {
+        return new class ($html) implements HtmlProviderInterface {
             public function __construct(private readonly string $html)
             {
             }
@@ -132,7 +133,7 @@ final class AnalyzerTest extends TestCase
 
     private function rule(string $name, Status $status, string $message): RuleInterface
     {
-        return new class($name, $status, $message) implements RuleInterface {
+        return new class ($name, $status, $message) implements RuleInterface {
             public function __construct(
                 private readonly string $name,
                 private readonly Status $status,

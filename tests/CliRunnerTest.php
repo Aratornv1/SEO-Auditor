@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Aratornv1\SeoChecker\Tests;
 
 use Aratornv1\SeoChecker\Cli;
-use Aratornv1\SeoChecker\Exception\FetchException;
 use Aratornv1\SeoChecker\HtmlProviderInterface;
+use Aratornv1\SeoChecker\Tests\Support\StubHtmlProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -102,7 +102,7 @@ final class CliRunnerTest extends TestCase
         $provider = $this->provider(['https://example.com' => $this->fixture('good.html')]);
 
         [$code, $out, $err] = $this->runCli(['--format=json', 'example.com'], $provider);
-        $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+        $data = $this->decodeReport($out);
 
         self::assertSame(Cli::EXIT_OK, $code);
         self::assertSame('', $err);
@@ -117,7 +117,7 @@ final class CliRunnerTest extends TestCase
         $provider = $this->provider(['https://example.com' => $this->fixture('bad.html')]);
 
         [$code, $out] = $this->runCli(['--format', 'json', 'example.com'], $provider);
-        $statuses = array_column(json_decode($out, true, flags: JSON_THROW_ON_ERROR)['results'], 'status');
+        $statuses = array_column($this->decodeReport($out)['results'], 'status');
 
         self::assertSame(Cli::EXIT_ISSUES, $code);
         self::assertContains('error', $statuses);
@@ -126,13 +126,12 @@ final class CliRunnerTest extends TestCase
     public function testJsonFormatReportsFailedDownloadAsJsonLine(): void
     {
         [$code, $out, $err] = $this->runCli(['--format=json', 'missing.test']);
-        $data = json_decode($out, true, flags: JSON_THROW_ON_ERROR);
+        $data = $this->decodeError($out);
 
         self::assertSame(Cli::EXIT_USAGE, $code);
         self::assertSame('', $err, 'stdout carries the error, stderr stays empty.');
         self::assertSame('https://missing.test', $data['url']);
         self::assertStringContainsString('missing.test', $data['error']);
-        self::assertArrayNotHasKey('results', $data);
     }
 
     /**
@@ -178,7 +177,7 @@ final class CliRunnerTest extends TestCase
      */
     private function runCli(
         array $args,
-        ?object $provider = null,
+        ?StubHtmlProvider $provider = null,
         ?\Closure $factory = null,
         bool $colorAllowed = false,
     ): array {
@@ -204,29 +203,36 @@ final class CliRunnerTest extends TestCase
     }
 
     /**
-     * A provider that serves the given pages and fails for every other URL.
-     *
      * @param array<string, string> $pages URL => HTML
      */
-    private function provider(array $pages): object
+    private function provider(array $pages): StubHtmlProvider
     {
-        return new class ($pages) implements HtmlProviderInterface {
-            /** @var list<string> */
-            public array $requested = [];
+        return new StubHtmlProvider($pages);
+    }
 
-            /**
-             * @param array<string, string> $pages
-             */
-            public function __construct(private readonly array $pages)
-            {
-            }
+    /**
+     * @return array{url: string, results: list<array{rule: string, status: string, message: string}>}
+     */
+    private function decodeReport(string $json): array
+    {
+        $data = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertArrayHasKey('results', $data);
 
-            public function fetch(string $url): string
-            {
-                $this->requested[] = $url;
+        /** @var array{url: string, results: list<array{rule: string, status: string, message: string}>} $data */
+        return $data;
+    }
 
-                return $this->pages[$url] ?? throw new FetchException('Не вдалося завантажити ' . $url);
-            }
-        };
+    /**
+     * @return array{url: string, error: string}
+     */
+    private function decodeError(string $json): array
+    {
+        $data = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertArrayNotHasKey('results', $data);
+
+        /** @var array{url: string, error: string} $data */
+        return $data;
     }
 }

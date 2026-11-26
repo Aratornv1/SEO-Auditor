@@ -6,6 +6,7 @@ namespace Aratornv1\SeoChecker\Rules;
 
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
+use Aratornv1\SeoChecker\Support\XPathFunctions;
 use DOMXPath;
 
 /**
@@ -26,7 +27,7 @@ final class HtmlLangRule implements RuleInterface
 
     public function check(DOMXPath $xpath): Outcome
     {
-        $lang = trim((string) $xpath->evaluate('string(/html/@lang)'));
+        $lang = trim(XPathFunctions::string($xpath, '/html/@lang'));
 
         if ($lang === '') {
             return Outcome::warning('Атрибут lang у тегу <html> відсутній або порожній');

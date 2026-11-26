@@ -33,9 +33,10 @@ final class PageFetcher implements HtmlProviderInterface
     private const READ_CHUNK = 8192;
 
     /**
-     * @param int    $timeoutSeconds total time allowed for one request (both transports)
-     * @param int    $maxBytes       responses larger than this are rejected
-     * @param bool   $preferCurl     set to false to force the streams transport
+     * @param int              $timeoutSeconds total time allowed for one request (both transports)
+     * @param int              $maxBytes       responses larger than this are rejected
+     * @param non-empty-string $userAgent      sent with every request
+     * @param bool             $preferCurl     set to false to force the streams transport
      */
     public function __construct(
         private readonly int $timeoutSeconds = 10,
@@ -180,7 +181,7 @@ final class PageFetcher implements HtmlProviderInterface
                 // The "timed_out" flag alone is unreliable: PHP also raises it on
                 // reads that returned data instantly. A real idle timeout is an
                 // empty read together with the flag.
-                if ($chunk === '' && (stream_get_meta_data($stream)['timed_out'] ?? false) === true) {
+                if ($chunk === '' && stream_get_meta_data($stream)['timed_out'] === true) {
                     throw $this->timedOut($url);
                 }
 

@@ -6,6 +6,7 @@ namespace Aratornv1\SeoChecker\Rules;
 
 use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
+use Aratornv1\SeoChecker\Support\XPathFunctions;
 use DOMXPath;
 
 /**
@@ -30,16 +31,16 @@ final class ImageAltRule implements RuleInterface
 
     public function check(DOMXPath $xpath): Outcome
     {
-        $total = (int) $xpath->evaluate('count(//img)');
+        $total = XPathFunctions::count($xpath, '//img');
 
         if ($total === 0) {
             return Outcome::success('Зображень на сторінці немає');
         }
 
-        $missing = (int) $xpath->evaluate('count(//img[not(@alt)])');
+        $missing = XPathFunctions::count($xpath, '//img[not(@alt)]');
 
         if ($missing === 0) {
-            $decorative = (int) $xpath->evaluate('count(//img[normalize-space(@alt) = ""])');
+            $decorative = XPathFunctions::count($xpath, '//img[normalize-space(@alt) = ""]');
 
             return Outcome::success(sprintf(
                 'Усі зображення мають атрибут alt (усього: %d, декоративних із порожнім alt: %d)',

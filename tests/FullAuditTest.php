@@ -67,7 +67,7 @@ final class FullAuditTest extends TestCase
     {
         $html = (string) file_get_contents(__DIR__ . '/Fixtures/' . $fixture);
 
-        $provider = new class($html) implements HtmlProviderInterface {
+        $provider = new class ($html) implements HtmlProviderInterface {
             public function __construct(private readonly string $html)
             {
             }

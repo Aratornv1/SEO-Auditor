@@ -13,6 +13,7 @@
         "ext-curl": "Preferred HTTP transport (gzip support, strict protocol restrictions); PHP streams are used as a fallback"
     },
     "require-dev": {
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^10.5 || ^11.0",
         "squizlabs/php_codesniffer": "^4.0"
     },
@@ -28,7 +29,20 @@
     },
     "bin": ["bin/seo-check"],
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "lint": "phpcs",
+        "analyse": "phpstan analyse --memory-limit=512M",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite",
+        "lint": "Check PSR-12 code style (phpcs.xml.dist)",
+        "analyse": "Run PHPStan static analysis (phpstan.neon.dist)",
+        "check": "Run code style, static analysis and tests"
     },
     "config": {
         "sort-packages": true

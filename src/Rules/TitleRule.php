@@ -8,6 +8,7 @@ use Aratornv1\SeoChecker\Outcome;
 use Aratornv1\SeoChecker\RuleInterface;
 use Aratornv1\SeoChecker\Support\LengthCheck;
 use Aratornv1\SeoChecker\Support\Text;
+use DOMElement;
 use DOMXPath;
 
 /**
@@ -44,6 +45,10 @@ final class TitleRule implements RuleInterface
 
         $filled = [];
         foreach ($titles as $title) {
+            if (!$title instanceof DOMElement) {
+                continue;
+            }
+
             $text = Text::normalize($title->textContent);
             if ($text !== '') {
                 $filled[] = $text;

@@ -86,7 +86,9 @@ final class Charset
     private static function convert(string $body, string $from): ?string
     {
         try {
-            return mb_convert_encoding($body, 'UTF-8', $from);
+            $converted = mb_convert_encoding($body, 'UTF-8', $from);
+
+            return $converted === false ? null : $converted;
         } catch (ValueError) {
             // mbstring does not know this encoding label.
             return null;

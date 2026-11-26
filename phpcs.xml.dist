@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ruleset name="seo-checker">
+    <description>PSR-12 for the whole project.</description>
+
+    <file>src</file>
+    <file>bin/seo-check</file>
+    <file>tests</file>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <rule ref="PSR12"/>
+
+    <!-- Tests keep whole HTML snippets on one line, so long lines are expected there. -->
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+</ruleset>

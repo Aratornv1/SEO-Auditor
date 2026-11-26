@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aratornv1\SeoChecker\Tests;
 
+use Aratornv1\SeoChecker\Support\XPathFunctions;
 use Aratornv1\SeoChecker\XPathFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +58,6 @@ final class XPathFactoryTest extends TestCase
     {
         $xpath = (new XPathFactory())->create("<html><head><title>bad \xFF\xFE bytes</title></head></html>");
 
-        self::assertStringContainsString('bad', (string) $xpath->evaluate('string(//head/title)'));
+        self::assertStringContainsString('bad', XPathFunctions::string($xpath, '//head/title'));
     }
 }
