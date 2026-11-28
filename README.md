@@ -8,7 +8,7 @@ The architecture is extensible through the **Strategy** pattern: every check is 
 
 ## Requirements
 
-- PHP 8.1+
+- PHP 8.4+
 - `dom` and `mbstring` extensions
 - `curl` extension (recommended; PHP streams are used without it)
 - Composer 2
@@ -224,7 +224,7 @@ composer analyse      # PHPStan static analysis, level 10 (phpstan.neon.dist)
 composer check        # all of the above
 ```
 
-GitHub Actions runs the tests on PHP 8.1–8.5 and the style and static analysis checks on every push to `main` and on every pull request (`.github/workflows/ci.yml`).
+GitHub Actions runs the tests on PHP 8.4–8.6 and the style and static analysis checks on every push to `main` and on every pull request (`.github/workflows/ci.yml`).
 
 The tests cover every rule (edge cases, letter case, Cyrillic), the core, the report, encoding detection, CLI argument parsing, a full audit on reference pages, and the fetcher (redirects, limits, timeouts, encodings). For `PageFetcher`, a local built-in PHP server is started automatically, so no internet is needed.
 
