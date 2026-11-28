@@ -64,7 +64,7 @@ final class MixedContentRuleTest extends TestCase
         self::assertStringContainsString('http://example.com/a.png, http://example.com/b.png, http://example.com/c.png', $result->message);
         // a.png is listed once; d.png and e.png are summarised.
         self::assertSame(1, substr_count($result->message, 'a.png'));
-        self::assertStringContainsString('і ще 2', $result->message);
+        self::assertStringContainsString('and 2 more', $result->message);
     }
 
     public function testHasName(): void

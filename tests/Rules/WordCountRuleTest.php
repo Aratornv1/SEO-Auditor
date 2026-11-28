@@ -20,7 +20,7 @@ final class WordCountRuleTest extends TestCase
 
     public function testEnoughWordsPass(): void
     {
-        $html = '<html><body><p>' . str_repeat('слово ', 300) . '</p></body></html>';
+        $html = '<html><body><p>' . str_repeat('word ', 300) . '</p></body></html>';
 
         $this->assertStatus(new WordCountRule(), $html, 'success');
     }
@@ -33,31 +33,31 @@ final class WordCountRuleTest extends TestCase
         $result = $this->runRule(new WordCountRule(minWords: 1), $html);
 
         // Привіт, світе (2) + П'ять, порад, про, e-mail, за, 2026, рік (7).
-        self::assertSame('Тексту достатньо (9 слів)', $result->message);
+        self::assertSame('Enough text (9 words)', $result->message);
     }
 
     public function testInvisibleTextIsNotCounted(): void
     {
-        $html = '<html><head><title>Title is not body text</title></head><body><p>Два слова</p>'
+        $html = '<html><head><title>Title is not body text</title></head><body><p>Two words</p>'
             . '<script>var a = "script text";</script><style>p { color: red; }</style>'
             . '<noscript>Enable JavaScript please</noscript><template><p>Hidden template</p></template>'
             . '</body></html>';
 
         $result = $this->runRule(new WordCountRule(minWords: 1), $html);
 
-        self::assertSame('Тексту достатньо (2 слова)', $result->message);
+        self::assertSame('Enough text (2 words)', $result->message);
     }
 
     public function testAdjacentElementsAreSeparateWords(): void
     {
         $result = $this->runRule(new WordCountRule(minWords: 1), '<html><body><b>one</b><i>two</i></body></html>');
 
-        self::assertSame('Тексту достатньо (2 слова)', $result->message);
+        self::assertSame('Enough text (2 words)', $result->message);
     }
 
     public function testThresholdIsConfigurable(): void
     {
-        $html = '<html><body><p>Лише три слова</p></body></html>';
+        $html = '<html><body><p>Only three words</p></body></html>';
 
         $this->assertStatus(new WordCountRule(minWords: 3), $html, 'success');
         $this->assertStatus(new WordCountRule(minWords: 4), $html, 'warning');
@@ -65,9 +65,9 @@ final class WordCountRuleTest extends TestCase
 
     public function testWarningShowsCountAndThreshold(): void
     {
-        $result = $this->runRule(new WordCountRule(), '<html><body><p>Одне</p></body></html>');
+        $result = $this->runRule(new WordCountRule(), '<html><body><p>One</p></body></html>');
 
-        self::assertSame('Замало тексту на сторінці (1 слово, рекомендовано щонайменше 300)', $result->message);
+        self::assertSame('Not enough text on the page (1 word, at least 300 recommended)', $result->message);
     }
 
     public function testHasName(): void

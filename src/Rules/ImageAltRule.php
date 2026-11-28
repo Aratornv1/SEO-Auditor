@@ -34,7 +34,7 @@ final class ImageAltRule implements RuleInterface
         $total = XPathFunctions::count($xpath, '//img');
 
         if ($total === 0) {
-            return Outcome::success('Зображень на сторінці немає');
+            return Outcome::success('The page has no images');
         }
 
         $missing = XPathFunctions::count($xpath, '//img[not(@alt)]');
@@ -43,13 +43,13 @@ final class ImageAltRule implements RuleInterface
             $decorative = XPathFunctions::count($xpath, '//img[normalize-space(@alt) = ""]');
 
             return Outcome::success(sprintf(
-                'Усі зображення мають атрибут alt (усього: %d, декоративних із порожнім alt: %d)',
+                'All images have an alt attribute (total: %d, decorative with an empty alt: %d)',
                 $total,
                 $decorative,
             ));
         }
 
-        $message = sprintf('Зображень без атрибута alt: %d із %d', $missing, $total);
+        $message = sprintf('Images without an alt attribute: %d of %d', $missing, $total);
 
         return $missing / $total >= self::ERROR_RATIO
             ? Outcome::error($message)

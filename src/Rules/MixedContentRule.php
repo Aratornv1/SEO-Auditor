@@ -46,7 +46,7 @@ final class MixedContentRule implements RuleInterface
 
         if ($active !== []) {
             return Outcome::error(sprintf(
-                'Скрипти, стилі чи фрейми підключено по http:// (%s): на HTTPS-сторінці браузер їх заблокує',
+                'Scripts, styles or frames are loaded over http:// (%s): browsers block them on an HTTPS page',
                 $this->examples($active),
             ));
         }
@@ -55,12 +55,12 @@ final class MixedContentRule implements RuleInterface
 
         if ($passive !== []) {
             return Outcome::warning(sprintf(
-                'Зображення чи медіа підключено по http:// (%s): на HTTPS-сторінці це змішаний контент',
+                'Images or media are loaded over http:// (%s): this is mixed content on an HTTPS page',
                 $this->examples($passive),
             ));
         }
 
-        return Outcome::success('Усі ресурси підключено без http://');
+        return Outcome::success('No resources are loaded over http://');
     }
 
     /**
@@ -142,6 +142,6 @@ final class MixedContentRule implements RuleInterface
         $shown = implode(', ', array_slice($urls, 0, self::MAX_EXAMPLES));
         $rest = count($urls) - self::MAX_EXAMPLES;
 
-        return $rest > 0 ? sprintf('%s і ще %d', $shown, $rest) : $shown;
+        return $rest > 0 ? sprintf('%s and %d more', $shown, $rest) : $shown;
     }
 }

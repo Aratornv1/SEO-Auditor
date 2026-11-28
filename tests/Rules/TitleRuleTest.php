@@ -41,7 +41,7 @@ final class TitleRuleTest extends TestCase
         yield 'two empty titles' => ['<html><head><title></title><title> </title></head></html>', 'error'];
         yield 'cyrillic counted in characters, not bytes' => [
             // 36 characters (but 70+ bytes in UTF-8) - must be a success.
-            '<html><head><title>Найкращий сайт про оптимізацію SEO</title></head></html>',
+            '<html><head><title>The best site about SEO optimisation</title></head></html>',
             'success',
         ];
         yield 'whitespace inside tag is collapsed' => [

@@ -38,7 +38,7 @@ final class CliTest extends TestCase
 
         // 1.5 MB fits into the 2 MB default limit, so the audit runs.
         self::assertContains($code, [0, 1], $out);
-        self::assertStringContainsString('Підсумок', $out);
+        self::assertStringContainsString('Summary', $out);
     }
 
     public function testMaxSizeOptionRejectsLargerPage(): void
@@ -46,8 +46,8 @@ final class CliTest extends TestCase
         [$code, $out] = $this->cli(['--max-size=1', self::$server->url('/huge')]);
 
         self::assertSame(2, $code);
-        self::assertStringContainsString('перевищує ліміт', $out);
-        self::assertStringContainsString('1 МБ', $out);
+        self::assertStringContainsString('exceeds the size limit', $out);
+        self::assertStringContainsString('1 MB', $out);
     }
 
     public function testMaxSizeAcceptsSeparateArgumentAndDecimals(): void

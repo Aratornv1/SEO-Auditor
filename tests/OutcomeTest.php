@@ -19,6 +19,6 @@ final class OutcomeTest extends TestCase
 
     public function testKeepsTheMessage(): void
     {
-        self::assertSame('Тег відсутній', Outcome::error('Тег відсутній')->message);
+        self::assertSame('Tag is missing', Outcome::error('Tag is missing')->message);
     }
 }

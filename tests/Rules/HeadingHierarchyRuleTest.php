@@ -57,6 +57,6 @@ final class HeadingHierarchyRuleTest extends TestCase
         $result = $this->runRule(new HeadingHierarchyRule(), "<html><body>{$body}</body></html>");
 
         self::assertSame('warning', $result->status->value);
-        self::assertStringContainsString('і ще', $result->message);
+        self::assertStringContainsString('more', $result->message);
     }
 }

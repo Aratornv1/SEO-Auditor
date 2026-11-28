@@ -1,6 +1,6 @@
 {
     "name": "aratornv1/seo-checker",
-    "description": "Розширюваний консольний SEO-аудитор веб-сторінок на чистому PHP (Strategy-патерн).",
+    "description": "Extensible command-line SEO auditor for web pages, written in plain PHP (Strategy pattern).",
     "type": "library",
     "license": "MIT",
     "keywords": ["seo", "audit", "cli", "strategy-pattern"],

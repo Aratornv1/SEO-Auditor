@@ -40,7 +40,7 @@ final class TitleRule implements RuleInterface
         $titles = $xpath->query('//head/title');
 
         if ($titles === false || $titles->length === 0) {
-            return Outcome::error('Тег <title> відсутній');
+            return Outcome::error('The <title> tag is missing');
         }
 
         $filled = [];
@@ -57,13 +57,16 @@ final class TitleRule implements RuleInterface
 
         // Every <title> is empty.
         if ($filled === []) {
-            return Outcome::error('Тег <title> порожній');
+            return Outcome::error('The <title> tag is empty');
         }
 
         if ($titles->length > 1) {
-            return Outcome::warning(sprintf('Знайдено кілька тегів <title> (%d), має бути один', $titles->length));
+            return Outcome::warning(sprintf(
+                'Several <title> tags found (%d), there should be only one',
+                $titles->length,
+            ));
         }
 
-        return LengthCheck::outcome($filled[0], $this->minLength, $this->maxLength, 'Заголовок');
+        return LengthCheck::outcome($filled[0], $this->minLength, $this->maxLength, 'Title');
     }
 }

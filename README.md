@@ -58,23 +58,23 @@ On Linux/macOS the file is executable, so you can also run it as `./bin/seo-chec
 
 Exit codes: `0` — no errors (warnings are allowed), `1` — at least one `error` (or a `warning` with `--strict`), `2` — incorrect usage or the page could not be downloaded. This is convenient for CI.
 
-Example report for a page with problems (the report messages are currently in Ukrainian):
+Example report for a page with problems:
 
 ```
-SEO-аудит: http://127.0.0.1:8099/bad.html
+SEO audit: http://127.0.0.1:8099/bad.html
 
- ⚠️  Title              Заголовок занадто короткий (4 символи, рекомендовано 30–60)
- ⚠️  Meta description   Мета-тег description відсутній
- ⚠️  H1                 Знайдено 2 теги <h1>, має бути один
- ⚠️  Heading hierarchy  Пропущено рівні заголовків: h2 → h4
- ❌ Image alt          Зображень без атрибута alt: 2 із 3
- ⚠️  Canonical          Тег <link rel="canonical"> відсутній
- ❌ Robots meta        Сторінку закрито від індексації (noindex у meta robots)
- ❌ Viewport           Мета-тег viewport відсутній (сторінка не адаптована під мобільні)
- ⚠️  Open Graph         Open Graph не налаштовано (немає og:title, og:description, og:image)
- ⚠️  HTML lang          Атрибут lang у тегу <html> відсутній або порожній
+ ⚠️  Title              Title is too short (4 characters, recommended 30–60)
+ ⚠️  Meta description   The meta description tag is missing
+ ⚠️  H1                 Found 2 <h1> tags, there should be only one
+ ⚠️  Heading hierarchy  Skipped heading levels: h2 → h4
+ ❌ Image alt          Images without an alt attribute: 2 of 3
+ ⚠️  Canonical          The <link rel="canonical"> tag is missing
+ ❌ Robots meta        The page is blocked from indexing (noindex in meta robots)
+ ❌ Viewport           The viewport meta tag is missing (the page is not mobile friendly)
+ ⚠️  Open Graph         Open Graph is not set up (no og:title, og:description, og:image)
+ ⚠️  HTML lang          The lang attribute on <html> is missing or empty
 
-Підсумок: 0 ✅ · 7 ⚠️ · 3 ❌
+Summary: 0 ✅ · 7 ⚠️ · 3 ❌
 ```
 
 Statuses: ✅ `success` — all good, ⚠️ `warning` — worth improving, ❌ `error` — a serious problem.
@@ -88,7 +88,7 @@ php bin/seo-check --format=json example.com | jq '.results[] | select(.status ==
 ```
 
 ```json
-{"url":"https://example.com","results":[{"rule":"Title","status":"warning","message":"Заголовок занадто короткий (4 символи, рекомендовано 30–60)"}, ...]}
+{"url":"https://example.com","results":[{"rule":"Title","status":"warning","message":"Title is too short (4 characters, recommended 30–60)"}, ...]}
 ```
 
 If the page cannot be downloaded, stdout still contains JSON: `{"url":"https://example.com","error":"..."}`. The exit codes are the same as in text mode. Argument errors (unknown option, bad value) are printed to stderr as plain text.

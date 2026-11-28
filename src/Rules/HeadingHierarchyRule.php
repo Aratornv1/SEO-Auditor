@@ -30,7 +30,7 @@ final class HeadingHierarchyRule implements RuleInterface
         $headings = $xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6');
 
         if ($headings === false || $headings->length === 0) {
-            return Outcome::warning('На сторінці немає жодного заголовка (h1–h6)');
+            return Outcome::warning('The page has no headings (h1–h6)');
         }
 
         $skips = [];
@@ -50,12 +50,12 @@ final class HeadingHierarchyRule implements RuleInterface
         }
 
         if ($skips === []) {
-            return Outcome::success(sprintf('Ієрархія заголовків послідовна (заголовків: %d)', $headings->length));
+            return Outcome::success(sprintf('The heading hierarchy is consistent (headings: %d)', $headings->length));
         }
 
         $shown = array_slice($skips, 0, self::MAX_EXAMPLES);
-        $suffix = count($skips) > self::MAX_EXAMPLES ? sprintf(' і ще %d', count($skips) - self::MAX_EXAMPLES) : '';
+        $suffix = count($skips) > self::MAX_EXAMPLES ? sprintf(' and %d more', count($skips) - self::MAX_EXAMPLES) : '';
 
-        return Outcome::warning('Пропущено рівні заголовків: ' . implode(', ', $shown) . $suffix);
+        return Outcome::warning('Skipped heading levels: ' . implode(', ', $shown) . $suffix);
     }
 }

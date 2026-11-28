@@ -44,7 +44,7 @@ final class CanonicalRule implements RuleInterface
         $links = $this->findCanonicalLinks($xpath);
 
         if ($links === []) {
-            return Outcome::warning('Тег <link rel="canonical"> відсутній');
+            return Outcome::warning('The <link rel="canonical"> tag is missing');
         }
 
         $unique = array_values(array_unique($links));
@@ -53,39 +53,39 @@ final class CanonicalRule implements RuleInterface
         // main link, and search engines may ignore all of them.
         if (count($unique) > 1) {
             return Outcome::error(sprintf(
-                'Знайдено кілька різних canonical-адрес, пошуковик може проігнорувати їх усі: %s',
+                'Several different canonical URLs found, search engines may ignore all of them: %s',
                 $this->listUrls($unique),
             ));
         }
 
         if (count($links) > 1) {
-            return Outcome::warning(sprintf('Тег canonical продубльовано (знайдено %d)', count($links)));
+            return Outcome::warning(sprintf('The canonical tag is duplicated (found %d)', count($links)));
         }
 
         $href = $unique[0];
 
         if ($href === '') {
-            return Outcome::error('Атрибут href у canonical порожній');
+            return Outcome::error('The canonical href attribute is empty');
         }
 
         if (preg_match('#^https?://[^\s/]+#i', $href) !== 1) {
-            return Outcome::warning(sprintf('Canonical має бути абсолютною адресою, зараз: %s', $href));
+            return Outcome::warning(sprintf('Canonical must be an absolute URL, currently: %s', $href));
         }
 
         $ogUrl = $this->findOgUrl($xpath);
 
         if ($ogUrl !== null && $this->normalizeUrl($ogUrl) !== $this->normalizeUrl($href)) {
             return Outcome::warning(sprintf(
-                'Canonical (%s) і og:url (%s) вказують на різні адреси; '
-                . 'головною вважається canonical, вирівняйте og:url',
+                'Canonical (%s) and og:url (%s) point to different URLs; '
+                . 'canonical is treated as the main one, align og:url',
                 $href,
                 $ogUrl,
             ));
         }
 
         return Outcome::success($ogUrl !== null
-            ? sprintf('Canonical вказує на %s (збігається з og:url)', $href)
-            : sprintf('Canonical вказує на %s', $href));
+            ? sprintf('Canonical points to %s (matches og:url)', $href)
+            : sprintf('Canonical points to %s', $href));
     }
 
     /**
@@ -166,12 +166,12 @@ final class CanonicalRule implements RuleInterface
     private function listUrls(array $urls): string
     {
         $shown = array_map(
-            static fn (string $url): string => $url === '' ? '(порожній href)' : $url,
+            static fn (string $url): string => $url === '' ? '(empty href)' : $url,
             array_slice($urls, 0, self::MAX_LISTED_URLS),
         );
 
         $suffix = count($urls) > self::MAX_LISTED_URLS
-            ? sprintf(' і ще %d', count($urls) - self::MAX_LISTED_URLS)
+            ? sprintf(' and %d more', count($urls) - self::MAX_LISTED_URLS)
             : '';
 
         return implode(', ', $shown) . $suffix;

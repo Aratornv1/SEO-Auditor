@@ -39,7 +39,7 @@ final class MetaDescriptionRule implements RuleInterface
         $descriptions = $this->meta->byName($xpath, 'description');
 
         if ($descriptions === []) {
-            return Outcome::warning('Мета-тег description відсутній');
+            return Outcome::warning('The meta description tag is missing');
         }
 
         $filled = array_values(array_filter(
@@ -49,12 +49,12 @@ final class MetaDescriptionRule implements RuleInterface
 
         // Every description tag is empty.
         if ($filled === []) {
-            return Outcome::warning('Мета-тег description порожній');
+            return Outcome::warning('The meta description tag is empty');
         }
 
         if (count($descriptions) > 1) {
             return Outcome::warning(sprintf(
-                'Знайдено кілька мета-тегів description (%d), має бути один',
+                'Several meta description tags found (%d), there should be only one',
                 count($descriptions),
             ));
         }
@@ -63,8 +63,8 @@ final class MetaDescriptionRule implements RuleInterface
             $filled[0],
             $this->minLength,
             $this->maxLength,
-            'Опис',
-            ', пошуковик його обріже',
+            'Description',
+            ', search engines will truncate it',
         );
     }
 }

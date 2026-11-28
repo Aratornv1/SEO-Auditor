@@ -27,27 +27,27 @@ final class LengthCheckTest extends TestCase
     #[DataProvider('lengthProvider')]
     public function testBoundariesAreInclusive(string $text, Status $expected): void
     {
-        self::assertSame($expected, LengthCheck::outcome($text, 5, 10, 'Текст')->status);
+        self::assertSame($expected, LengthCheck::outcome($text, 5, 10, 'Text')->status);
     }
 
     public function testMessagesNameTheSubjectAndTheRange(): void
     {
         self::assertSame(
-            'Текст занадто короткий (2 символи, рекомендовано 5–10)',
-            LengthCheck::outcome('ab', 5, 10, 'Текст')->message,
+            'Text is too short (2 characters, recommended 5–10)',
+            LengthCheck::outcome('ab', 5, 10, 'Text')->message,
         );
         self::assertSame(
-            'Текст має оптимальну довжину (6 символів)',
-            LengthCheck::outcome('abcdef', 5, 10, 'Текст')->message,
+            'Text has an optimal length (6 characters)',
+            LengthCheck::outcome('abcdef', 5, 10, 'Text')->message,
         );
     }
 
     public function testNoteIsAppendedOnlyToTheTooLongMessage(): void
     {
-        $long = LengthCheck::outcome(str_repeat('a', 21), 5, 10, 'Опис', ', пошуковик його обріже');
-        $short = LengthCheck::outcome('ab', 5, 10, 'Опис', ', пошуковик його обріже');
+        $long = LengthCheck::outcome(str_repeat('a', 21), 5, 10, 'Description', ', search engines will truncate it');
+        $short = LengthCheck::outcome('ab', 5, 10, 'Description', ', search engines will truncate it');
 
-        self::assertSame('Опис занадто довгий (21 символ, рекомендовано 5–10), пошуковик його обріже', $long->message);
-        self::assertStringNotContainsString('обріже', $short->message);
+        self::assertSame('Description is too long (21 characters, recommended 5–10), search engines will truncate it', $long->message);
+        self::assertStringNotContainsString('truncate', $short->message);
     }
 }

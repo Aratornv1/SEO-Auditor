@@ -60,7 +60,7 @@ final class Analyzer
         try {
             $outcome = $rule->check($xpath);
         } catch (Throwable $e) {
-            return new Result($name, Status::Error, 'Правило завершилося з помилкою: ' . $e->getMessage());
+            return new Result($name, Status::Error, 'The rule failed with an error: ' . $e->getMessage());
         }
 
         return new Result($name, $outcome->status, $outcome->message);

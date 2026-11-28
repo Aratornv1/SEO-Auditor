@@ -123,7 +123,7 @@ final class CanonicalRuleTest extends TestCase
         self::assertSame('warning', $result->status->value);
         self::assertStringContainsString('https://example.com/main', $result->message);
         self::assertStringContainsString('https://example.com/copy', $result->message);
-        self::assertStringContainsString('головною вважається canonical', $result->message);
+        self::assertStringContainsString('canonical is treated as the main one', $result->message);
     }
 
     public function testConflictMessageListsTheDifferentAddresses(): void
@@ -148,7 +148,7 @@ final class CanonicalRuleTest extends TestCase
 
         $result = $this->runRule(new CanonicalRule(), "<html><head>{$links}</head></html>");
 
-        self::assertStringContainsString('і ще 3', $result->message);
+        self::assertStringContainsString('and 3 more', $result->message);
         self::assertStringNotContainsString('https://example.com/6', $result->message);
     }
 
@@ -160,7 +160,7 @@ final class CanonicalRuleTest extends TestCase
             . '<meta property="og:url" content="https://example.com/page"></head></html>',
         );
 
-        self::assertStringContainsString('збігається з og:url', $result->message);
+        self::assertStringContainsString('matches og:url', $result->message);
     }
 
     public function testSuccessMessageContainsUrl(): void

@@ -23,7 +23,7 @@ final class WordCountRule implements RuleInterface
     private const VISIBLE_TEXT = '//body//text()'
         . '[not(ancestor::script or ancestor::style or ancestor::noscript or ancestor::template)]';
 
-    // A word: letters or digits, optionally joined by an apostrophe or a hyphen (п'ять, e-mail).
+    // A word: letters or digits, optionally joined by an apostrophe or a hyphen (don't, e-mail).
     private const WORD = "/[\\p{L}\\p{N}]+(?:['’ʼ-][\\p{L}\\p{N}]+)*/u";
 
     /**
@@ -46,13 +46,13 @@ final class WordCountRule implements RuleInterface
 
         if ($count < $this->minWords) {
             return Outcome::warning(sprintf(
-                'Замало тексту на сторінці (%s, рекомендовано щонайменше %d)',
+                'Not enough text on the page (%s, at least %d recommended)',
                 $this->words($count),
                 $this->minWords,
             ));
         }
 
-        return Outcome::success(sprintf('Тексту достатньо (%s)', $this->words($count)));
+        return Outcome::success(sprintf('Enough text (%s)', $this->words($count)));
     }
 
     private function countWords(DOMXPath $xpath): int
@@ -77,6 +77,6 @@ final class WordCountRule implements RuleInterface
 
     private function words(int $count): string
     {
-        return $count . ' ' . Text::plural($count, 'слово', 'слова', 'слів');
+        return $count . ' ' . Text::plural($count, 'word', 'words');
     }
 }

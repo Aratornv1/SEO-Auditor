@@ -41,10 +41,10 @@ final class JsonReporterTest extends TestCase
 
     public function testRendersDownloadError(): void
     {
-        $output = (new JsonReporter())->renderError('https://example.com', 'Сервер відповів статусом HTTP 404');
+        $output = (new JsonReporter())->renderError('https://example.com', 'The server responded with HTTP status 404');
 
         self::assertSame(
-            ['url' => 'https://example.com', 'error' => 'Сервер відповів статусом HTTP 404'],
+            ['url' => 'https://example.com', 'error' => 'The server responded with HTTP status 404'],
             json_decode($output, true, flags: JSON_THROW_ON_ERROR),
         );
     }

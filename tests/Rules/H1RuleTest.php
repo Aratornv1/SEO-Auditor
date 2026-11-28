@@ -48,8 +48,8 @@ final class H1RuleTest extends TestCase
     {
         $result = $this->runRule(new H1Rule(), '<html><body><h1> </h1><h1>Real title</h1></body></html>');
 
-        self::assertStringContainsString('2 теги', $result->message);
-        self::assertStringNotContainsString('порожній', $result->message);
+        self::assertStringContainsString('2 <h1> tags', $result->message);
+        self::assertStringNotContainsString('empty', $result->message);
     }
 
     public function testImageAltIsUsedAsPreview(): void
@@ -61,7 +61,7 @@ final class H1RuleTest extends TestCase
 
     public function testLongHeadingIsTruncatedInMessage(): void
     {
-        $long = str_repeat('Заголовок ', 20);
+        $long = str_repeat('Heading ', 20);
         $result = $this->runRule(new H1Rule(), "<html><body><h1>{$long}</h1></body></html>");
 
         self::assertSame('success', $result->status->value);

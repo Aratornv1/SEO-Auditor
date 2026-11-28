@@ -21,8 +21,8 @@ final class LengthCheck
     }
 
     /**
-     * @param string $subject     what is measured, starts the message ("Заголовок", "Опис")
-     * @param string $tooLongNote appended to the "too long" message, e.g. ", пошуковик його обріже"
+     * @param string $subject     what is measured, starts the message ("Title", "Description")
+     * @param string $tooLongNote appended to the "too long" message, e.g. ", search engines will truncate it"
      */
     public static function outcome(
         string $text,
@@ -35,7 +35,7 @@ final class LengthCheck
 
         if ($length < $minLength) {
             return Outcome::warning(sprintf(
-                '%s занадто короткий (%s, рекомендовано %d–%d)',
+                '%s is too short (%s, recommended %d–%d)',
                 $subject,
                 Text::characters($length),
                 $minLength,
@@ -45,7 +45,7 @@ final class LengthCheck
 
         if ($length > $maxLength) {
             return Outcome::warning(sprintf(
-                '%s занадто довгий (%s, рекомендовано %d–%d)%s',
+                '%s is too long (%s, recommended %d–%d)%s',
                 $subject,
                 Text::characters($length),
                 $minLength,
@@ -54,6 +54,6 @@ final class LengthCheck
             ));
         }
 
-        return Outcome::success(sprintf('%s має оптимальну довжину (%s)', $subject, Text::characters($length)));
+        return Outcome::success(sprintf('%s has an optimal length (%s)', $subject, Text::characters($length)));
     }
 }

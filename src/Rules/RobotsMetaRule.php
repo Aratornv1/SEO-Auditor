@@ -42,18 +42,18 @@ final class RobotsMetaRule implements RuleInterface
 
         // "none" is a shorthand for "noindex, nofollow".
         if (in_array('noindex', $directives, true) || in_array('none', $directives, true)) {
-            return Outcome::error('Сторінку закрито від індексації (noindex у meta robots)');
+            return Outcome::error('The page is blocked from indexing (noindex in meta robots)');
         }
 
         if (in_array('nofollow', $directives, true)) {
-            return Outcome::warning('Посилання на сторінці не враховуються (nofollow у meta robots)');
+            return Outcome::warning('Links on the page are not followed (nofollow in meta robots)');
         }
 
         if ($directives === []) {
-            return Outcome::success('Обмежень індексації немає (meta robots відсутній, діє значення за замовчуванням)');
+            return Outcome::success('No indexing restrictions (no meta robots, the default applies)');
         }
 
-        return Outcome::success('Сторінку дозволено індексувати');
+        return Outcome::success('The page can be indexed');
     }
 
     /**

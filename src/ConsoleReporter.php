@@ -38,7 +38,7 @@ final class ConsoleReporter implements ReporterInterface
 
     public function render(string $url, array $results): string
     {
-        $lines = ['', 'SEO-аудит: ' . $url, ''];
+        $lines = ['', 'SEO audit: ' . $url, ''];
 
         $nameWidth = 0;
         foreach ($results as $result) {
@@ -60,7 +60,7 @@ final class ConsoleReporter implements ReporterInterface
 
         $lines[] = '';
         $lines[] = sprintf(
-            'Підсумок: %d %s · %d %s · %d %s',
+            'Summary: %d %s · %d %s · %d %s',
             $counts['success'],
             $this->summaryLabel(Status::Success),
             $counts['warning'],

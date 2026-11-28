@@ -35,7 +35,7 @@ final class ViewportRule implements RuleInterface
         $tags = $this->meta->byName($xpath, 'viewport');
 
         if ($tags === []) {
-            return Outcome::error('Мета-тег viewport відсутній (сторінка не адаптована під мобільні)');
+            return Outcome::error('The viewport meta tag is missing (the page is not mobile friendly)');
         }
 
         // Use the first tag that actually has content.
@@ -50,17 +50,17 @@ final class ViewportRule implements RuleInterface
         $directives = $this->parse($content);
 
         if (($directives['width'] ?? null) !== 'device-width') {
-            return Outcome::warning('У viewport не задано width=device-width');
+            return Outcome::warning('The viewport does not set width=device-width');
         }
 
         if ($this->blocksZoom($directives)) {
             return Outcome::warning(
-                'Viewport забороняє масштабування (user-scalable=no / maximum-scale=1), '
-                . 'це погіршує доступність'
+                'The viewport disables zooming (user-scalable=no / maximum-scale=1), '
+                . 'which hurts accessibility'
             );
         }
 
-        return Outcome::success('Viewport налаштовано коректно');
+        return Outcome::success('The viewport is configured correctly');
     }
 
     /**

@@ -49,6 +49,6 @@ final class ImageAltRuleTest extends TestCase
             '<html><body><img src="a.png" alt="A"><img src="b.png" alt="B"><img src="c.png" alt="C"><img src="d.png"></body></html>',
         );
 
-        self::assertStringContainsString('1 із 4', $result->message);
+        self::assertStringContainsString('1 of 4', $result->message);
     }
 }

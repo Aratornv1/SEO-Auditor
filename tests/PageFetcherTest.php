@@ -110,7 +110,7 @@ final class PageFetcherTest extends TestCase
     public function testRejectsEmptyBody(bool $preferCurl): void
     {
         $this->expectException(FetchException::class);
-        $this->expectExceptionMessage('Порожня');
+        $this->expectExceptionMessage('Empty response');
 
         $this->fetcher($preferCurl)->fetch(self::$server->url('/empty'));
     }
@@ -119,7 +119,7 @@ final class PageFetcherTest extends TestCase
     public function testRejectsOversizedResponse(bool $preferCurl): void
     {
         $this->expectException(FetchException::class);
-        $this->expectExceptionMessage('ліміт');
+        $this->expectExceptionMessage('size limit');
 
         $this->fetcher($preferCurl, maxBytes: 5_000)->fetch(self::$server->url('/big'));
     }
@@ -147,7 +147,7 @@ final class PageFetcherTest extends TestCase
     public function testUnreachableHostFails(bool $preferCurl): void
     {
         $this->expectException(FetchException::class);
-        $this->expectExceptionMessage('Не вдалося');
+        $this->expectExceptionMessage('Could not');
 
         // Port 1 is reserved and nothing listens there.
         $this->fetcher($preferCurl, timeout: 2)->fetch('http://127.0.0.1:1/');

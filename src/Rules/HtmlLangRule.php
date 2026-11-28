@@ -30,16 +30,16 @@ final class HtmlLangRule implements RuleInterface
         $lang = trim(XPathFunctions::string($xpath, '/html/@lang'));
 
         if ($lang === '') {
-            return Outcome::warning('Атрибут lang у тегу <html> відсутній або порожній');
+            return Outcome::warning('The lang attribute on <html> is missing or empty');
         }
 
         if (preg_match(self::LANG_PATTERN, $lang) !== 1) {
             return Outcome::warning(sprintf(
-                'Некоректне значення lang="%s" (очікується, наприклад, "uk" або "en-US")',
+                'Invalid value lang="%s" (expected, for example, "en" or "en-US")',
                 $lang,
             ));
         }
 
-        return Outcome::success(sprintf('Мову сторінки задано: lang="%s"', $lang));
+        return Outcome::success(sprintf('The page language is set: lang="%s"', $lang));
     }
 }

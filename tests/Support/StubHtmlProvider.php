@@ -27,6 +27,6 @@ final class StubHtmlProvider implements HtmlProviderInterface
     {
         $this->requested[] = $url;
 
-        return $this->pages[$url] ?? throw new FetchException('Не вдалося завантажити ' . $url);
+        return $this->pages[$url] ?? throw new FetchException('Could not download ' . $url);
     }
 }

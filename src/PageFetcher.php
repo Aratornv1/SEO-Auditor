@@ -50,11 +50,11 @@ final class PageFetcher implements HtmlProviderInterface
     {
         $scheme = parse_url($url, PHP_URL_SCHEME);
         if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
-            throw new FetchException(sprintf('Непідтримувана схема URL: %s (потрібно http або https)', $url));
+            throw new FetchException(sprintf('Unsupported URL scheme: %s (http or https is required)', $url));
         }
 
         if (parse_url($url, PHP_URL_HOST) === null) {
-            throw new FetchException(sprintf('Некоректний URL: %s', $url));
+            throw new FetchException(sprintf('Invalid URL: %s', $url));
         }
 
         $response = $this->preferCurl && extension_loaded('curl')
@@ -78,7 +78,7 @@ final class PageFetcher implements HtmlProviderInterface
 
         $handle = curl_init($url);
         if ($handle === false) {
-            throw new FetchException('Не вдалося ініціалізувати cURL');
+            throw new FetchException('Could not initialise cURL');
         }
 
         curl_setopt_array($handle, [
@@ -122,7 +122,7 @@ final class PageFetcher implements HtmlProviderInterface
         }
 
         if ($ok === false) {
-            throw new FetchException(sprintf('Не вдалося завантажити %s: %s', $url, curl_error($handle)));
+            throw new FetchException(sprintf('Could not download %s: %s', $url, curl_error($handle)));
         }
 
         return [
@@ -156,8 +156,8 @@ final class PageFetcher implements HtmlProviderInterface
 
         $stream = @fopen($url, 'rb', false, $context);
         if ($stream === false) {
-            $reason = error_get_last()['message'] ?? 'невідома помилка';
-            throw new FetchException(sprintf('Не вдалося завантажити %s: %s', $url, $reason));
+            $reason = error_get_last()['message'] ?? 'unknown error';
+            throw new FetchException(sprintf('Could not download %s: %s', $url, $reason));
         }
 
         $body = '';
@@ -175,7 +175,7 @@ final class PageFetcher implements HtmlProviderInterface
                 $chunk = fread($stream, self::READ_CHUNK);
 
                 if ($chunk === false) {
-                    throw new FetchException(sprintf('Не вдалося прочитати відповідь від %s', $url));
+                    throw new FetchException(sprintf('Could not read the response from %s', $url));
                 }
 
                 // The "timed_out" flag alone is unreliable: PHP also raises it on
@@ -209,7 +209,7 @@ final class PageFetcher implements HtmlProviderInterface
     private function tooLarge(string $url): FetchException
     {
         return new FetchException(sprintf(
-            'Відповідь від %s перевищує ліміт розміру (%s МБ)',
+            'The response from %s exceeds the size limit (%s MB)',
             $url,
             rtrim(rtrim(number_format($this->maxBytes / 1048576, 2, '.', ''), '0'), '.'),
         ));
@@ -218,7 +218,7 @@ final class PageFetcher implements HtmlProviderInterface
     private function timedOut(string $url): FetchException
     {
         return new FetchException(sprintf(
-            'Час очікування відповіді від %s вичерпано (%d с)',
+            'Timed out waiting for a response from %s (%d s)',
             $url,
             $this->timeoutSeconds,
         ));
@@ -236,8 +236,8 @@ final class PageFetcher implements HtmlProviderInterface
         // response had no readable status line.
         if ($status < 200 || $status >= 300) {
             throw new FetchException($status === 0
-                ? sprintf('Сервер повернув некоректну відповідь для %s', $url)
-                : sprintf('Сервер відповів статусом HTTP %d для %s', $status, $url));
+                ? sprintf('The server returned an invalid response for %s', $url)
+                : sprintf('The server responded with HTTP status %d for %s', $status, $url));
         }
 
         // A missing Content-Type is tolerated (some servers omit it). Only real
@@ -247,14 +247,14 @@ final class PageFetcher implements HtmlProviderInterface
             && preg_match('#^\s*(text/html|application/xhtml\+xml)\s*(;|$)#i', $response['contentType']) !== 1
         ) {
             throw new FetchException(sprintf(
-                'За адресою %s не HTML-сторінка (Content-Type: %s)',
+                '%s is not an HTML page (Content-Type: %s)',
                 $url,
                 $response['contentType'],
             ));
         }
 
         if (trim($response['body']) === '') {
-            throw new FetchException(sprintf('Порожня відповідь від %s', $url));
+            throw new FetchException(sprintf('Empty response from %s', $url));
         }
 
         return $response['body'];

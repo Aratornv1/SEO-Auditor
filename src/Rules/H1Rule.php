@@ -34,7 +34,7 @@ final class H1Rule implements RuleInterface
         $headings = $xpath->query('//h1');
 
         if ($headings === false || $headings->length === 0) {
-            return Outcome::error('На сторінці немає жодного <h1>');
+            return Outcome::error('The page has no <h1>');
         }
 
         $names = [];
@@ -51,18 +51,18 @@ final class H1Rule implements RuleInterface
 
         // Every <h1> is empty: there is no usable main heading at all.
         if ($names === []) {
-            return Outcome::error('Тег <h1> порожній (немає ні тексту, ні alt у зображення всередині)');
+            return Outcome::error('The <h1> tag is empty (no text and no alt on an image inside it)');
         }
 
         if ($headings->length > 1) {
             return Outcome::warning(sprintf(
-                'Знайдено %d %s <h1>, має бути один',
+                'Found %d %s, there should be only one',
                 $headings->length,
-                Text::plural($headings->length, 'тег', 'теги', 'тегів'),
+                Text::plural($headings->length, '<h1> tag', '<h1> tags'),
             ));
         }
 
-        return Outcome::success(sprintf('Один <h1>: «%s»', mb_strimwidth($names[0], 0, self::PREVIEW_LENGTH, '…')));
+        return Outcome::success(sprintf('One <h1>: "%s"', mb_strimwidth($names[0], 0, self::PREVIEW_LENGTH, '…')));
     }
 
     /**

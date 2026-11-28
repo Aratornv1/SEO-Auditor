@@ -48,18 +48,20 @@ final class OpenGraphRule implements RuleInterface
         }
 
         if (count($missing) === count(self::REQUIRED)) {
-            return Outcome::warning('Open Graph не налаштовано (немає og:title, og:description, og:image)');
+            return Outcome::warning('Open Graph is not set up (no og:title, og:description, og:image)');
         }
 
         if ($missing !== []) {
-            return Outcome::warning('Бракує Open Graph-тегів: ' . implode(', ', $missing));
+            return Outcome::warning('Missing Open Graph tags: ' . implode(', ', $missing));
         }
 
         if (preg_match('#^https?://#i', $values['og:image'] ?? '') !== 1) {
-            return Outcome::warning('og:image має бути абсолютною адресою (інакше соцмережі не покажуть зображення)');
+            return Outcome::warning(
+                'og:image must be an absolute URL (otherwise social networks will not show the image)',
+            );
         }
 
-        return Outcome::success('Усі базові Open Graph-теги на місці');
+        return Outcome::success('All basic Open Graph tags are present');
     }
 
     /**

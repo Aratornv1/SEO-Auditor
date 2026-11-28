@@ -45,7 +45,7 @@ final class MetaDescriptionRuleTest extends TestCase
         yield 'two empty tags' => [$page($tag('') . $tag('  ')), 'warning'];
         yield 'cyrillic counted in characters' => [
             // 91 characters, but about 170 bytes in UTF-8.
-            $page($tag('Практичний посібник з пошукової оптимізації: як налаштувати метадані та структуру сторінки.')),
+            $page($tag('A practical guide to search engine optimisation: how to set up metadata and page structure.')),
             'success',
         ];
     }
@@ -64,7 +64,7 @@ final class MetaDescriptionRuleTest extends TestCase
             . str_repeat('word ', 20) . '"></head></html>',
         );
 
-        self::assertStringContainsString('кілька', $result->message);
+        self::assertStringContainsString('Several', $result->message);
     }
 
     public function testThresholdsAreConfigurable(): void
